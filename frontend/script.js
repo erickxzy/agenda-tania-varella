@@ -664,10 +664,98 @@ function mostrarPainelAdmin(){
     titulo.textContent = `Bem-vindo(a), ${usuarioAtual.nome}!`;
   }
   
-  atualizarEventosAdmin();
+  configurarNavegacaoAdmin();
   atualizarListaAlunos();
-  mostrarCardapioAdmin();
-  mostrarAvisosAdmin();
+}
+
+function configurarNavegacaoAdmin(){
+  const botoesCategoria = document.querySelectorAll('.btn-categoria');
+  
+  botoesCategoria.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const secaoNome = btn.getAttribute('data-secao');
+      
+      botoesCategoria.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      document.querySelectorAll('.admin-secao').forEach(secao => {
+        secao.classList.remove('active');
+        secao.classList.add('hidden');
+      });
+      
+      const secaoAtiva = document.getElementById(`secao-${secaoNome}`);
+      if(secaoAtiva){
+        secaoAtiva.classList.remove('hidden');
+        secaoAtiva.classList.add('active');
+        
+        switch(secaoNome){
+          case 'turmas':
+            atualizarListaAlunos();
+            break;
+          case 'avisos':
+            mostrarAvisosAdmin();
+            break;
+          case 'cardapio':
+            mostrarCardapioAdmin();
+            break;
+          case 'logs':
+            carregarLogs();
+            break;
+          case 'eventos':
+            atualizarEventosAdmin();
+            break;
+          case 'professores':
+            break;
+        }
+      }
+    });
+  });
+}
+
+async function carregarLogs(){
+  const container = document.getElementById('containerLogs');
+  container.innerHTML = '<p>Carregando histórico de logins...</p>';
+  
+  try {
+    const res = await fetch('/api/logs');
+    const logs = await res.json();
+    
+    if(logs.length === 0){
+      container.innerHTML = '<p style="text-align: center; color: var(--text-tertiary);">Nenhum log de login registrado.</p>';
+      return;
+    }
+    
+    container.innerHTML = `
+      <table class="tabela-alunos">
+        <thead>
+          <tr>
+            <th>Aluno</th>
+            <th>E-mail</th>
+            <th>Turma</th>
+            <th>Data/Hora</th>
+            <th>IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${logs.map(log => {
+            const dataHora = new Date(log.data_hora).toLocaleString('pt-BR');
+            return `
+              <tr>
+                <td><strong>${log.nome}</strong></td>
+                <td>${log.email}</td>
+                <td>${log.turma}</td>
+                <td>${dataHora}</td>
+                <td><code>${log.ip_address || 'N/A'}</code></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch(error){
+    console.error('Erro ao carregar logs:', error);
+    container.innerHTML = '<p>Erro ao carregar histórico de logins.</p>';
+  }
 }
 
 async function atualizarListaAlunos(){
@@ -1109,21 +1197,37 @@ async function mostrarAvisosAdmin(){
   }
 }
 
-document.getElementById("btnNovoAviso").addEventListener("click", async ()=>{
-  const tipo = await showModalInput("📝 Novo Aviso", "Tipo de aviso (Quizizz, Khan Academy, Redação Paraná):", "Quizizz");
-  if(!tipo) return;
+document.getElementById("btnNovoAviso").addEventListener("click", ()=>{
+  const modal = document.getElementById("modalNovoAviso");
+  document.getElementById("formNovoAviso").reset();
+  modal.classList.remove("hidden");
+  modal.style.display = "flex";
+});
 
-  const professor = await showModalInput("👨‍🏫 Novo Aviso", "Nome do professor:", "");
-  if(!professor) return;
+document.getElementById("btnFecharNovoAviso").addEventListener("click", ()=>{
+  const modal = document.getElementById("modalNovoAviso");
+  modal.classList.add("hidden");
+  modal.style.display = "none";
+});
 
-  const titulo = await showModalInput("📌 Novo Aviso", "Título do aviso:", "");
-  if(!titulo) return;
-
-  const descricao = await showModalInput("📝 Novo Aviso", "Descrição do aviso:", "");
-  if(!descricao) return;
-
-  const data_aviso = await showModalInput("📅 Novo Aviso", "Data (DD/MM/AAAA):", "");
-  if(!data_aviso) return;
+document.getElementById("formNovoAviso").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  
+  const tipo = document.getElementById("novoTipoAviso").value.trim();
+  const professor = document.getElementById("novoProfessor").value.trim();
+  const titulo = document.getElementById("novoTitulo").value.trim();
+  const descricao = document.getElementById("novoDescricao").value.trim();
+  const data_aviso = document.getElementById("novoData").value.trim();
+  
+  if(titulo.length < 5){
+    showToast("O título deve ter no mínimo 5 caracteres!", "error");
+    return;
+  }
+  
+  if(descricao.length < 10){
+    showToast("A descrição deve ter no mínimo 10 caracteres!", "error");
+    return;
+  }
 
   try {
     const res = await fetch('/api/avisos', {
@@ -1134,9 +1238,16 @@ document.getElementById("btnNovoAviso").addEventListener("click", async ()=>{
 
     if(res.ok){
       showToast("Aviso criado com sucesso!", "success");
+      const modal = document.getElementById("modalNovoAviso");
+      modal.classList.add("hidden");
+      modal.style.display = "none";
       mostrarAvisosAdmin();
+    } else {
+      const erro = await res.text();
+      showToast(`Erro ao criar aviso: ${erro}`, "error");
     }
   } catch(error) {
+    console.error('Erro ao criar aviso:', error);
     showToast("Erro ao criar aviso!", "error");
   }
 });
@@ -1348,6 +1459,8 @@ async function carregarProfessoresTurma(turma) {
       return;
     }
     
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    
     professoresTurmaDiv.innerHTML = `
       <table class="tabela-professores-turma">
         <thead>
@@ -1369,7 +1482,7 @@ async function carregarProfessoresTurma(turma) {
                   ${prof.status === 'Presente' ? '✅ Presente' : '❌ Falta'}
                 </span>
               </td>
-              <td>${prof.data}</td>
+              <td>${dataHoje}</td>
               <td>
                 <button class="btn-toggle-status" data-id="${prof.id}" data-status="${prof.status}">
                   ${prof.status === 'Presente' ? 'Marcar Falta' : 'Marcar Presença'}

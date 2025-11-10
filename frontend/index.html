@@ -119,18 +119,61 @@
                         <button id="sairAdmin" class="btn-sair">Sair</button>
                 </div>
 
-                <div class="secao-painel">
+                <div class="admin-menu-categorias">
+                        <button class="btn-categoria active" data-secao="turmas">
+                                <span class="categoria-icone">🧑‍🎓</span>
+                                <span class="categoria-texto">Turmas</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="avisos">
+                                <span class="categoria-icone">📢</span>
+                                <span class="categoria-texto">Avisos</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="cardapio">
+                                <span class="categoria-icone">🍽️</span>
+                                <span class="categoria-texto">Cardápio</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="logs">
+                                <span class="categoria-icone">📊</span>
+                                <span class="categoria-texto">Logs</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="eventos">
+                                <span class="categoria-icone">📅</span>
+                                <span class="categoria-texto">Eventos</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="professores">
+                                <span class="categoria-icone">👨‍🏫</span>
+                                <span class="categoria-texto">Professores</span>
+                        </button>
+                </div>
+
+                <div id="secao-turmas" class="admin-secao active">
+                        <h3>🧑‍🎓 Alunos por Turma</h3>
+                        <div id="containerTabelaAlunos"></div>
+                </div>
+
+                <div id="secao-avisos" class="admin-secao hidden">
+                        <h3>📢 Gerenciar Avisos e Atividades</h3>
+                        <button id="btnNovoAviso" class="btn-adicionar">+ Novo Aviso</button>
+                        <div id="avisosAdmin" class="avisos-lista"></div>
+                </div>
+
+                <div id="secao-cardapio" class="admin-secao hidden">
+                        <h3>🍽️ Cardápio do Dia</h3>
+                        <div id="cardapioAdmin" class="cardapio-dia"></div>
+                </div>
+
+                <div id="secao-logs" class="admin-secao hidden">
+                        <h3>📊 Histórico de Logins</h3>
+                        <div id="containerLogs"></div>
+                </div>
+
+                <div id="secao-eventos" class="admin-secao hidden">
                         <h3>📅 Próximos Eventos por Turma</h3>
                         <div class="turmas-container"></div>
                 </div>
 
-                <div class="secao-painel">
-                        <h3>🍽️ Cardápio do Dia (Editar)</h3>
-                        <div id="cardapioAdmin" class="cardapio-dia"></div>
-                </div>
-
-                <div class="secao-painel">
-                        <h3>📋 Professores por Turma (Presença/Falta)</h3>
+                <div id="secao-professores" class="admin-secao hidden">
+                        <h3>👨‍🏫 Professores por Turma (Presença/Falta)</h3>
                         <div class="turmas-professores-container">
                                 <label for="selecionarTurma">Selecione a turma:</label>
                                 <select id="selecionarTurma">
@@ -148,19 +191,6 @@
                                 </select>
                                 <div id="professoresTurma" class="professores-turma-lista"></div>
                         </div>
-                </div>
-
-                <div class="secao-painel">
-                        <h3>📢 Avisos e Atividades (Gerenciar)</h3>
-                        <div class="avisos-admin-container">
-                                <button id="btnNovoAviso" class="btn-adicionar">+ Novo Aviso</button>
-                                <div id="avisosAdmin" class="avisos-lista"></div>
-                        </div>
-                </div>
-
-                <div class="secao-painel">
-                        <h3>🧑‍🎓 Lista de Alunos Cadastrados</h3>
-                        <div id="containerTabelaAlunos"></div>
                 </div>
         </div>
 
@@ -216,6 +246,42 @@
                 </div>
         </div>
 
+        <div id="modalNovoAviso" class="modal-overlay hidden" style="display: none;">
+                <div class="modal-conteudo">
+                        <h2>📝 Novo Aviso</h2>
+                        <form id="formNovoAviso">
+                                <label>Tipo de Aviso:</label>
+                                <select id="novoTipoAviso" required>
+                                        <option value="">Selecione um tipo</option>
+                                        <option value="Quizizz">Quizizz</option>
+                                        <option value="Khan Academy">Khan Academy</option>
+                                        <option value="Redação Paraná">Redação Paraná</option>
+                                        <option value="Geral">Geral</option>
+                                        <option value="Urgente">Urgente</option>
+                                </select>
+
+                                <label>Professor:</label>
+                                <input type="text" id="novoProfessor" placeholder="Nome do professor" required minlength="3">
+
+                                <label>Título:</label>
+                                <input type="text" id="novoTitulo" placeholder="Título do aviso (mínimo 5 caracteres)" required minlength="5">
+
+                                <label>Descrição:</label>
+                                <textarea id="novoDescricao" placeholder="Descrição do aviso (mínimo 10 caracteres)" required rows="4" minlength="10"></textarea>
+
+                                <label>Data:</label>
+                                <input type="text" id="novoData" placeholder="DD/MM/AAAA" maxlength="10" required pattern="\d{2}/\d{2}/\d{4}">
+
+                                <button type="submit" class="btn-fechar-modal" style="width: 100%; margin-top: 15px;">
+                                        ✅ Criar Aviso
+                                </button>
+                        </form>
+                        <button id="btnFecharNovoAviso" class="btn-fechar-modal" style="background: var(--text-tertiary); margin-top: 10px;">
+                                Cancelar
+                        </button>
+                </div>
+        </div>
+
         <div id="modalEditarAviso" class="modal-overlay hidden" style="display: none;">
                 <div class="modal-conteudo">
                         <h2>✏️ Editar Aviso</h2>
@@ -225,19 +291,21 @@
                                         <option value="Quizizz">Quizizz</option>
                                         <option value="Khan Academy">Khan Academy</option>
                                         <option value="Redação Paraná">Redação Paraná</option>
+                                        <option value="Geral">Geral</option>
+                                        <option value="Urgente">Urgente</option>
                                 </select>
 
                                 <label>Professor:</label>
-                                <input type="text" id="editProfessor" placeholder="Nome do professor" required>
+                                <input type="text" id="editProfessor" placeholder="Nome do professor" required minlength="3">
 
                                 <label>Título:</label>
-                                <input type="text" id="editTitulo" placeholder="Título do aviso" required>
+                                <input type="text" id="editTitulo" placeholder="Título do aviso (mínimo 5 caracteres)" required minlength="5">
 
                                 <label>Descrição:</label>
-                                <textarea id="editDescricao" placeholder="Descrição do aviso" required rows="4"></textarea>
+                                <textarea id="editDescricao" placeholder="Descrição do aviso (mínimo 10 caracteres)" required rows="4" minlength="10"></textarea>
 
                                 <label>Data:</label>
-                                <input type="text" id="editData" placeholder="DD/MM/AAAA" maxlength="10" required>
+                                <input type="text" id="editData" placeholder="DD/MM/AAAA" maxlength="10" required pattern="\d{2}/\d{2}/\d{4}">
 
                                 <button type="submit" class="btn-fechar-modal" style="width: 100%; margin-top: 15px;">
                                         💾 Salvar Alterações
