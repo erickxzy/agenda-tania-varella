@@ -8,9 +8,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
-const db = new Database('escola.db');
+const db = new Database(path.join(__dirname, '../escola.db'));
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
@@ -894,24 +894,25 @@ const backupDB = () => {
   try {
     const fs = require('fs');
     const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
-    const backupPath = `backups/escola_backup_${timestamp}.db`;
+    const backupDir = path.join(__dirname, '../backups');
+    const backupPath = path.join(backupDir, `escola_backup_${timestamp}.db`);
     
-    if (!fs.existsSync('backups')) {
-      fs.mkdirSync('backups', { recursive: true });
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
     }
     
     db.backup(backupPath)
       .then(() => {
         console.log(`✅ Backup criado: ${backupPath}`);
         
-        const backups = fs.readdirSync('backups')
+        const backups = fs.readdirSync(backupDir)
           .filter(f => f.startsWith('escola_backup_'))
           .sort()
           .reverse();
         
         while (backups.length > 10) {
           const oldBackup = backups.pop();
-          fs.unlinkSync(`backups/${oldBackup}`);
+          fs.unlinkSync(path.join(backupDir, oldBackup));
           console.log(`🗑️ Backup antigo removido: ${oldBackup}`);
         }
       })
