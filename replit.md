@@ -4,13 +4,23 @@
 Sistema de agenda escolar desenvolvido em Node.js com Express e SQLite. Permite gerenciamento de eventos, cardápios, avisos e atividades para alunos e administração escolar.
 
 ## Estrutura do Projeto
-- `server.js` - Servidor Express principal (porta 5000)
-- `public/` - Arquivos estáticos (HTML, CSS, JS, imagens)
-  - `index.html` - Interface principal
-  - `script.js` - Lógica do frontend
-  - `style.css` - Estilos da aplicação
-- `escola.db` - Banco de dados SQLite
-- `package.json` - Dependências Node.js
+
+O projeto está organizado com separação clara entre backend e frontend:
+
+```
+projeto/
+├── backend/              # Servidor Node.js
+│   ├── server.js        # API Express (porta 5000)
+│   ├── package.json     # Dependências do backend
+│   └── package-lock.json
+├── frontend/            # Interface do usuário
+│   ├── index.html       # Página principal
+│   ├── script.js        # Lógica do cliente
+│   └── style.css        # Estilos da aplicação
+├── backups/             # Backups automáticos do banco
+├── escola.db            # Banco de dados SQLite
+└── README.md            # Documentação completa
+```
 
 ## Tecnologias
 - Node.js 20
