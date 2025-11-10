@@ -564,69 +564,9 @@ async function mostrarPainelAluno(aluno){
   }
 
   mostrarCardapioDoDia();
-  mostrarAvisosAluno();
   carregarNotificacoes();
 }
 
-async function mostrarAvisosAluno(){
-  const avisosDiv = document.getElementById("avisosAluno");
-  avisosDiv.innerHTML = "<p>Carregando avisos...</p>";
-
-  try {
-    const res = await fetch('/api/avisos');
-    const avisos = await res.json();
-
-    const badge = document.getElementById("badgeNotificacao");
-    badge.textContent = avisos.length;
-
-    avisosDiv.innerHTML = `
-      <table class="tabela-avisos">
-        <thead>
-          <tr>
-            <th>Tipo</th>
-            <th>Professor</th>
-            <th>Título</th>
-            <th>Descrição</th>
-            <th>Data</th>
-          </tr>
-        </thead>
-        <tbody id="avisosTableBody"></tbody>
-      </table>
-      <div class="avisos-mobile" id="avisosMobile"></div>
-    `;
-
-    const tbody = document.getElementById("avisosTableBody");
-    const mobileContainer = document.getElementById("avisosMobile");
-    
-    avisos.forEach(aviso => {
-      const tr = document.createElement("tr");
-      tr.className = `aviso-${aviso.tipo.toLowerCase().replace(' ', '-')}`;
-      tr.innerHTML = `
-        <td><span class="badge-tipo badge-${aviso.tipo.toLowerCase().replace(' ', '-')}">${aviso.tipo}</span></td>
-        <td>${aviso.professor}</td>
-        <td>${aviso.titulo}</td>
-        <td>${aviso.descricao}</td>
-        <td>${aviso.data_aviso}</td>
-      `;
-      tbody.appendChild(tr);
-      
-      const mobileCard = document.createElement("div");
-      mobileCard.className = "aviso-mobile-card";
-      mobileCard.innerHTML = `
-        <span class="aviso-mobile-tipo badge-tipo badge-${aviso.tipo.toLowerCase().replace(' ', '-')}">${aviso.tipo}</span>
-        <h4>${aviso.titulo}</h4>
-        <div class="aviso-mobile-info">
-          <div>👨‍🏫 <strong>Professor:</strong> ${aviso.professor}</div>
-        </div>
-        <div class="aviso-mobile-desc">${aviso.descricao}</div>
-        <div class="aviso-mobile-data">📅 ${aviso.data_aviso}</div>
-      `;
-      mobileContainer.appendChild(mobileCard);
-    });
-  } catch(error) {
-    avisosDiv.innerHTML = "<p>Erro ao carregar avisos</p>";
-  }
-}
 
 async function mostrarCardapioDoDia(){
   const cardapioDiv=document.getElementById("cardapioDoDia");
@@ -1370,26 +1310,32 @@ async function carregarNotificacoes() {
     const res = await fetch('/api/avisos');
     const avisos = await res.json();
     
-    const badge = document.getElementById("badgeNotificacao");
-    badge.textContent = avisos.length;
+    const avisosLimpados = JSON.parse(localStorage.getItem('avisosLimpados') || '[]');
+    const avisosFiltrados = avisos.filter(aviso => !avisosLimpados.includes(aviso.id));
     
-    if (avisos.length === 0) {
+    const badge = document.getElementById("badgeNotificacao");
+    badge.textContent = avisosFiltrados.length;
+    
+    if (avisosFiltrados.length === 0) {
       listaNotificacoes.innerHTML = `
         <div class="notificacao-vazia">
           <div class="notificacao-vazia-icone">📭</div>
           <p>Nenhuma notificação no momento</p>
         </div>
       `;
+      badge.classList.add("hidden-badge");
       return;
     }
     
+    badge.classList.remove("hidden-badge");
     listaNotificacoes.innerHTML = "";
     
-    const avisosRecentes = avisos.slice(0, 10);
+    const avisosRecentes = avisosFiltrados.slice(0, 10);
     
     avisosRecentes.forEach((aviso, index) => {
       const item = document.createElement("div");
       item.className = `notificacao-item ${index < 3 ? 'nova' : ''}`;
+      item.dataset.avisoId = aviso.id;
       item.innerHTML = `
         <div class="notificacao-item-header">
           <div class="notificacao-titulo">${aviso.titulo}</div>
@@ -1423,7 +1369,11 @@ async function carregarNotificacoes() {
 
 limparNotificacoesBtn.addEventListener("click", () => {
   const items = listaNotificacoes.querySelectorAll(".notificacao-item");
-  items.forEach(item => item.classList.remove("nova"));
+  const avisosIds = Array.from(items).map(item => parseInt(item.dataset.avisoId));
+  
+  const avisosLimpados = JSON.parse(localStorage.getItem('avisosLimpados') || '[]');
+  const novosAvisosLimpados = [...new Set([...avisosLimpados, ...avisosIds])];
+  localStorage.setItem('avisosLimpados', JSON.stringify(novosAvisosLimpados));
   
   listaNotificacoes.innerHTML = `
     <div class="notificacao-vazia">
@@ -1432,9 +1382,9 @@ limparNotificacoesBtn.addEventListener("click", () => {
     </div>
   `;
   
-  setTimeout(() => {
-    carregarNotificacoes();
-  }, 2000);
+  const badge = document.getElementById("badgeNotificacao");
+  badge.textContent = "0";
+  badge.classList.add("hidden-badge");
 });
 
 const selecionarTurma = document.getElementById('selecionarTurma');
