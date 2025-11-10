@@ -371,6 +371,7 @@ mostrarCadastro.addEventListener("click", e => {
     botaoLogin.textContent = "Cadastrar";
     mostrarCadastro.textContent = "Já tem conta? Entrar";
     nomeInput.style.display = "block";
+    serieSelect.style.display = tipoUsuario === "aluno" ? "block" : "none";
     esqueceuSenhaContainer.style.display = "none";
   } else {
     if (tipoUsuario === "aluno") {
@@ -380,9 +381,10 @@ mostrarCadastro.addEventListener("click", e => {
     }
     botaoLogin.textContent = "Entrar";
     mostrarCadastro.textContent = "Não tem conta? Cadastrar";
+    nomeInput.style.display = "none";
+    serieSelect.style.display = "none";
     esqueceuSenhaContainer.style.display = "block";
   }
-  nomeInput.style.display = modoCadastro ? "block" : "none";
 });
 
 loginForm.addEventListener("submit", async e => {
