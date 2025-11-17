@@ -10,10 +10,19 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "@types/memoizee": "^0.4.12",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.4.1",
+    "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0"
+    "drizzle-kit": "^0.31.7",
+    "drizzle-orm": "^0.44.7",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "memoizee": "^0.4.17",
+    "openid-client": "^6.8.1",
+    "passport": "^0.7.0"
   }
 }
