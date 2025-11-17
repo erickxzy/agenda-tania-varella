@@ -1,5 +1,5 @@
 entrypoint = "index.html"
-modules = ["nodejs-20", "web"]
+modules = ["nodejs-20", "web", "postgresql-16"]
 
 [nix]
 channel = "stable-25_05"
@@ -43,7 +43,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd backend && node server.js"
+args = "npm run dev"
 waitForPort = 5000
 
 [agent]
@@ -53,10 +53,6 @@ integrations = ["javascript_database:1.0.0", "javascript_log_in_with_replit:1.0.
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 35919
-externalPort = 3000
 
 [[ports]]
 localPort = 37403
