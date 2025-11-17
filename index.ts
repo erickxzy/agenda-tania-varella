@@ -11,7 +11,6 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'frontend')));
 
 async function startServer() {
   await setupAuth(app);
@@ -28,8 +27,14 @@ async function startServer() {
   });
 
   app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+    if (req.isAuthenticated()) {
+      res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+    } else {
+      res.sendFile(path.join(__dirname, 'frontend', 'auth.html'));
+    }
   });
+
+  app.use(express.static(path.join(__dirname, 'frontend')));
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server running on port ${PORT}`);
