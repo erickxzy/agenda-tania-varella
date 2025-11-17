@@ -43,7 +43,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node backend/server.js"
+args = "cd backend && node server.js"
 waitForPort = 5000
 
 [agent]
@@ -53,10 +53,6 @@ integrations = ["javascript_database:1.0.0"]
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 34613
-externalPort = 3002
 
 [[ports]]
 localPort = 35919

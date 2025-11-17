@@ -1,7 +1,7 @@
 # Agenda Escolar Tânia Varella Ferreira
 
 ## Visão Geral
-Sistema de agenda escolar desenvolvido em Node.js com Express e SQLite. Permite gerenciamento de eventos, cardápios, avisos e atividades para alunos e administração escolar.
+Sistema de agenda escolar desenvolvido em Node.js com Express e PostgreSQL (Replit Database). Permite gerenciamento de eventos, cardápios, avisos e atividades para alunos e administração escolar.
 
 ## Estrutura do Projeto
 
@@ -11,21 +11,24 @@ O projeto está organizado com separação clara entre backend e frontend:
 projeto/
 ├── backend/              # Servidor Node.js
 │   ├── server.js        # API Express (porta 5000)
+│   ├── db/              # Configuração do banco de dados
+│   │   ├── config.js    # Conexão PostgreSQL
+│   │   ├── migrations.js # Schema do banco
+│   │   ├── seed.js      # Dados iniciais
+│   │   └── helpers.js   # Funções auxiliares
 │   ├── package.json     # Dependências do backend
 │   └── package-lock.json
 ├── frontend/            # Interface do usuário
 │   ├── index.html       # Página principal
 │   ├── script.js        # Lógica do cliente
 │   └── style.css        # Estilos da aplicação
-├── backups/             # Backups automáticos do banco
-├── escola.db            # Banco de dados SQLite
 └── README.md            # Documentação completa
 ```
 
 ## Tecnologias
 - Node.js 20
 - Express 5.1.0
-- SQLite (better-sqlite3)
+- PostgreSQL (Replit Database via pg)
 - bcryptjs (autenticação)
 - Frontend: HTML/CSS/JavaScript vanilla
 
@@ -61,15 +64,29 @@ O sistema gerencia 10 turmas com 127 professores distribuídos:
 
 ## Banco de Dados
 
+O sistema utiliza PostgreSQL (Replit Database) para armazenamento persistente e escalável. As migrations e seeds são executados automaticamente na primeira configuração.
+
 ### Tabelas Principais
-- `alunos` - Dados dos alunos
-- `direcao` - Membros da direção
-- `eventos` - Eventos escolares por série
+- `alunos` - Dados dos alunos com autenticação
+- `direcao` - Membros da direção escolar
+- `eventos` - Eventos escolares por série/turma
 - `cardapio` - Cardápio semanal
-- `professores` - Professores gerais (legado)
-- `professores_turma` - Professores por turma com status de presença
-- `avisos` - Avisos e atividades
+- `professores` - Professores gerais
+- `professores_turma` - Professores por turma com controle de presença
+- `avisos` - Avisos e atividades (Quizizz, Khan Academy, Redação)
 - `recuperacao_senha` - Sistema de recuperação de senha
+- `logs_login` - Auditoria de logins
+- `auditoria` - Logs de operações do sistema
+- `estatisticas` - Métricas gerais do sistema
+
+### Configuração do Banco
+O banco de dados PostgreSQL é gerenciado pelo Replit e está disponível através da variável de ambiente `DATABASE_URL`. Para executar migrations e seeds manualmente:
+
+```bash
+cd backend
+node db/migrations.js  # Criar tabelas
+node db/seed.js       # Popular dados iniciais
+```
 
 ## APIs REST
 
@@ -130,11 +147,13 @@ O servidor iniciará na porta 5000 e criará/populará o banco de dados automati
 ```
 
 ## Segurança
-- Senhas criptografadas com bcryptjs
-- Validação de e-mails (@escola.pr.gov.br)
+- Senhas criptografadas com bcryptjs (hash bcrypt)
+- Validação de e-mails com domínio escolar
 - Sistema de recuperação de senha com código de 6 dígitos
-- Códigos expiram em 30 minutos
-- Prepared statements no SQLite (proteção SQL injection)
+- Códigos expiram em 15 minutos
+- Prepared statements no PostgreSQL (proteção contra SQL injection)
+- Pool de conexões gerenciado para performance
+- Auditoria completa de operações críticas
 
 ## Criadores
 - Erick Gustavo Dos Santos Gomes
@@ -143,6 +162,15 @@ O servidor iniciará na porta 5000 e criará/populará o banco de dados automati
 - Sophia Monteiro de Paula
 
 ## Última Atualização
+17 de Novembro de 2025 - Migração para PostgreSQL:
+- Sistema migrado de SQLite para PostgreSQL (Replit Database)
+- Implementação de migrations e seeds automatizados
+- Pool de conexões PostgreSQL para melhor performance
+- Queries otimizadas para PostgreSQL com sintaxe parametrizada
+- Todas as 28 rotas da API mantidas e funcionando
+- Sistema de auditoria e logs aprimorado
+- Backup e rollback gerenciado pelo Replit Database
+
 01 de Novembro de 2025 - Correções no painel administrativo:
 - Eventos agora exibidos por turma específica (1A-1D, 2A-2C, 3A-3C) ao invés de séries genéricas
 - Corrigido status de professores: agora usa "Falta" ao invés de "Ausente" para compatibilidade com o banco de dados
