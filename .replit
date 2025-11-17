@@ -48,6 +48,7 @@ waitForPort = 5000
 
 [agent]
 expertMode = true
+integrations = ["javascript_database:1.0.0"]
 
 [[ports]]
 localPort = 5000
@@ -64,7 +65,3 @@ externalPort = 3000
 [[ports]]
 localPort = 37403
 externalPort = 3001
-
-[[ports]]
-localPort = 41531
-externalPort = 3003
