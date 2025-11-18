@@ -465,6 +465,7 @@ const btnDirecao = document.getElementById("btnDirecao");
 const btnAluno = document.getElementById("btnAluno");
 const adminSecreto = document.getElementById("adminSecreto");
 const btnVoltar = document.getElementById("btnVoltar");
+const loginLegado = document.getElementById("loginLegado");
 
 btnDirecao.addEventListener("click", () => {
         // Redireciona para autenticação Replit com papel de direção
@@ -487,6 +488,14 @@ btnVoltar.addEventListener("click", () => {
         loginForm.reset();
         modoCadastro = false;
         tipoUsuario = null;
+});
+
+// Event listener para login legado (email e senha)
+loginLegado.addEventListener("click", (e) => {
+        e.preventDefault();
+        // Mostrar formulário de login legado como aluno por padrão
+        tipoUsuario = 'aluno';
+        mostrarTelaLogin();
 });
 
 function mostrarTelaLogin() {
