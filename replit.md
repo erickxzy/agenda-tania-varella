@@ -221,6 +221,14 @@ O servidor iniciará na porta 5000 com Replit Auth habilitado.
 - Sophia Monteiro de Paula
 
 ## Última Atualização
+18 de Novembro de 2025 - Correção do erro de cadastro de aluno:
+- Corrigido endpoint /api/auth/update-profile para criar usuário automaticamente se não existir
+- Eliminado erro 404 "Usuário não encontrado" que impedia cadastro de novos alunos
+- Melhorado feedback de erro no frontend com toast messages
+- Adicionados logs detalhados em updateUserProfile para diagnóstico
+- Sistema agora faz upsert automático de usuários em qualquer cenário
+- Race condition entre OAuth callback e update-profile completamente resolvida
+
 18 de Novembro de 2025 - Correção completa do fluxo pós-autenticação:
 - Implementado fallback em /api/auth/user para usar session claims quando user não está no banco
 - Corrigida ordem de limpeza de sessão: limpar campos temporários ANTES de salvar sessão
