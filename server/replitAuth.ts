@@ -1,5 +1,6 @@
 // Replit Auth integration using OpenID Connect
 import * as client from "openid-client";
+// @ts-ignore - passport module existe mas TypeScript não reconhece o path
 import { Strategy, type VerifyFunction } from "openid-client/passport";
 
 import passport from "passport";
@@ -56,26 +57,46 @@ async function upsertUser(
   role?: string,
   serie?: string,
 ) {
-  // Buscar usuário existente para preservar dados
-  const existingUser = await storage.getUser(claims["sub"]);
-  
-  const userData: any = {
-    id: claims["sub"],
-    email: claims["email"] || existingUser?.email,
-    firstName: claims["first_name"] || existingUser?.firstName,
-    lastName: claims["last_name"] || existingUser?.lastName,
-    profileImageUrl: claims["profile_image_url"] || existingUser?.profileImageUrl,
-    // Preservar role e serie existentes se não forem fornecidos novos valores
-    role: role || existingUser?.role,
-    serie: serie || existingUser?.serie,
-  };
-  
-  await storage.upsertUser(userData);
+  try {
+    // Buscar usuário existente para preservar dados
+    const existingUser = await storage.getUser(claims["sub"]);
+    
+    const userData: any = {
+      id: claims["sub"],
+      email: claims["email"] || existingUser?.email,
+      firstName: claims["first_name"] || existingUser?.firstName,
+      lastName: claims["last_name"] || existingUser?.lastName,
+      profileImageUrl: claims["profile_image_url"] || existingUser?.profileImageUrl,
+      // Preservar role e serie existentes se não forem fornecidos novos valores
+      role: role || existingUser?.role,
+      serie: serie || existingUser?.serie,
+    };
+    
+    console.log(`💾 Upserting user data:`, {
+      id: userData.id,
+      email: userData.email,
+      role: userData.role,
+      serie: userData.serie
+    });
+    
+    await storage.upsertUser(userData);
+    console.log(`✅ User ${userData.id} upserted successfully`);
+  } catch (error) {
+    console.error("❌ Error in upsertUser:", error);
+    if (error instanceof Error) {
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack
+      });
+    }
+    throw error; // Re-lançar para o caller lidar
+  }
 }
 
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
-  app.use(getSession());
+  const sessionMiddleware = getSession();
+  app.use(sessionMiddleware as any);
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -165,17 +186,33 @@ export async function setupAuth(app: Express) {
         try {
           const userId = (req.user as any).claims?.sub;
           if (userId) {
+            console.log(`📝 Saving role '${selectedRole}' for user ${userId}`, {
+              userId,
+              selectedRole,
+              selectedSerie
+            });
             // IMPORTANTE: Aguardar a operação de salvar completar antes de redirecionar
             await upsertUser(
               (req.user as any).claims,
               selectedRole,
               selectedSerie
             );
-            console.log(`✅ Role '${selectedRole}' saved for user ${userId}`);
+            console.log(`✅ Role '${selectedRole}' saved successfully for user ${userId}`);
+          } else {
+            console.error("❌ No userId found in claims");
           }
         } catch (error) {
           console.error("❌ Error saving role to database:", error);
+          // Log detalhado do erro
+          if (error instanceof Error) {
+            console.error("Error details:", {
+              message: error.message,
+              stack: error.stack
+            });
+          }
         }
+      } else {
+        console.log("⚠️ No selectedRole or req.user found in callback");
       }
       
       // Limpar campos temporários da sessão ANTES de salvar

@@ -48,6 +48,7 @@ async function startServer() {
   app.post('/api/auth/update-profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const claims = req.user.claims;
       const { role, serie } = req.body;
       
       // Validar papel
@@ -62,10 +63,23 @@ async function startServer() {
         return res.status(400).json({ error: 'Série inválida' });
       }
       
-      // Buscar usuário atual
-      const currentUser = await storage.getUser(userId);
+      // Buscar usuário atual (ou criar se não existir)
+      let currentUser = await storage.getUser(userId);
+      
+      // Se o usuário não existe, criar com dados da sessão
       if (!currentUser) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
+        console.log(`📝 Usuário ${userId} não encontrado, criando novo registro`);
+        currentUser = {
+          id: claims.sub,
+          email: claims.email,
+          firstName: claims.first_name,
+          lastName: claims.last_name,
+          profileImageUrl: claims.profile_image_url,
+          role: null,
+          serie: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
       }
       
       // Atualizar apenas os campos fornecidos
@@ -76,12 +90,20 @@ async function startServer() {
       if (role) updateData.role = role;
       if (serie) updateData.serie = serie.toUpperCase();
       
+      console.log(`💾 Atualizando perfil do usuário ${userId}:`, { role, serie });
       await storage.upsertUser(updateData);
       
       const updatedUser = await storage.getUser(userId);
+      console.log(`✅ Perfil atualizado com sucesso:`, updatedUser);
       res.json({ success: true, user: updatedUser });
     } catch (error) {
       console.error("Error updating user profile:", error);
+      if (error instanceof Error) {
+        console.error("Error details:", {
+          message: error.message,
+          stack: error.stack
+        });
+      }
       res.status(500).json({ error: "Erro ao atualizar perfil" });
     }
   });

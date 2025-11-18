@@ -179,6 +179,7 @@ async function updateUserProfile(role, serie = null) {
                         payload.serie = serie;
                 }
                 
+                console.log('📝 Atualizando perfil:', payload);
                 const response = await fetch('/api/auth/update-profile', {
                         method: 'POST',
                         headers: {
@@ -188,10 +189,18 @@ async function updateUserProfile(role, serie = null) {
                 });
                 
                 if (!response.ok) {
-                        console.error('Erro ao salvar perfil no banco de dados');
+                        const errorData = await response.json();
+                        console.error('❌ Erro ao salvar perfil:', errorData);
+                        showToast(errorData.error || 'Erro ao salvar perfil', 'error');
+                        throw new Error(errorData.error || 'Falha ao atualizar perfil');
                 }
+                
+                const result = await response.json();
+                console.log('✅ Perfil atualizado com sucesso:', result);
+                return result;
         } catch (error) {
-                console.error('Erro ao atualizar perfil:', error);
+                console.error('❌ Erro ao atualizar perfil:', error);
+                throw error;
         }
 }
 
