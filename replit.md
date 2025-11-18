@@ -221,6 +221,16 @@ O servidor iniciará na porta 5000 com Replit Auth habilitado.
 - Sophia Monteiro de Paula
 
 ## Última Atualização
+18 de Novembro de 2025 - Interface de cadastro com Google Auth:
+- Adicionada interface clara para cadastro usando Google/GitHub/Email
+- Caixa de destaque explicando "Cadastro e Login com Google"
+- Botões de perfil com subtexto "Entrar ou Cadastrar"
+- Link para login legado (email e senha) para contas antigas
+- Estilos CSS com suporte a dark mode para novos elementos
+- Usuários podem se cadastrar OU fazer login clicando em qualquer perfil
+- Cadastro automático no banco de dados na primeira autenticação
+- Experiência de usuário intuitiva e auto-explicativa
+
 18 de Novembro de 2025 - Correção do redirecionamento pós-autenticação:
 - Após login bem-sucedido, usuários são direcionados DIRETAMENTE para o painel apropriado
 - Tela de seleção de perfil agora é escondida automaticamente após autenticação
