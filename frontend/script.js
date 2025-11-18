@@ -45,7 +45,7 @@ async function checkReplitAuth() {
                         if (response.ok) {
                                 const user = await response.json();
                                 // Usuário está autenticado, mostrar painel apropriado
-                                await showPanelForRole(roleFromUrl, user);
+                                await showPanelForRole(roleFromUrl, user, true);
                                 // Limpar parâmetro da URL
                                 window.history.replaceState({}, document.title, window.location.pathname);
                                 return true;
@@ -64,10 +64,15 @@ async function checkReplitAuth() {
                 const response = await fetch('/api/auth/user');
                 if (response.ok) {
                         const user = await response.json();
-                        // Verificar se há uma role salva no localStorage
+                        // Verificar se o usuário já tem papel e série salvos no banco
+                        if (user.role) {
+                                await showPanelForRole(user.role, user, false);
+                                return true;
+                        }
+                        // Se não tem papel no banco, verificar localStorage como fallback
                         const savedRole = localStorage.getItem('userRole');
                         if (savedRole) {
-                                await showPanelForRole(savedRole, user);
+                                await showPanelForRole(savedRole, user, true);
                                 return true;
                         }
                 } else if (response.status === 401) {
@@ -89,7 +94,7 @@ function clearAuthState() {
 }
 
 // Função para exibir o painel correto baseado no papel
-                                                                                                                                                                                                                                                                                                                async function showPanelForRole(role, user) {
+async function showPanelForRole(role, user, shouldSave = false) {
         // Salvar role no localStorage
         localStorage.setItem('userRole', role);
         
@@ -104,20 +109,26 @@ function clearAuthState() {
         // Mostrar painel apropriado usando as funções existentes
         if (role === 'aluno') {
                 // Para alunos, precisamos da série
-                // Por enquanto, vamos pedir que selecionem a série se não tiver salvo
-                let serie = localStorage.getItem('userSerie');
+                // Verificar se já tem série salva no banco
+                let serie = user.serie || localStorage.getItem('userSerie');
+                
                 if (!serie) {
                         // Mostrar seletor de série
                         const serieOptions = ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '3A', '3B', '3C'];
                         serie = prompt(`Bem-vindo, ${nomeCompleto}!\n\nPor favor, selecione sua turma:\n${serieOptions.join(', ')}`)?.toUpperCase();
                         if (serie && serieOptions.includes(serie)) {
                                 localStorage.setItem('userSerie', serie);
+                                // Salvar no banco de dados
+                                await updateUserProfile(role, serie);
                         } else {
                                 showToast('Turma inválida. Por favor, tente novamente.', 'error');
                                 localStorage.removeItem('userRole');
                                 window.location.reload();
                                 return;
                         }
+                } else if (shouldSave) {
+                        // Salvar no banco se ainda não foi salvo
+                        await updateUserProfile(role, serie);
                 }
                 
                 // Adaptar objeto do usuário Replit Auth para formato esperado
@@ -137,8 +148,37 @@ function clearAuthState() {
                         email: user.email || user.username || 'sem-email'
                 };
                 
+                // Salvar papel no banco se necessário
+                if (shouldSave) {
+                        await updateUserProfile(role);
+                }
+                
                 usuarioAtual = usuarioAdaptado;
                 mostrarPainelAdmin();
+        }
+}
+
+// Função para atualizar papel e série no banco de dados
+async function updateUserProfile(role, serie = null) {
+        try {
+                const payload = { role };
+                if (serie) {
+                        payload.serie = serie;
+                }
+                
+                const response = await fetch('/api/auth/update-profile', {
+                        method: 'POST',
+                        headers: {
+                                'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload),
+                });
+                
+                if (!response.ok) {
+                        console.error('Erro ao salvar perfil no banco de dados');
+                }
+        } catch (error) {
+                console.error('Erro ao atualizar perfil:', error);
         }
 }
 

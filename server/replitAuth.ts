@@ -53,14 +53,24 @@ function updateUserSession(
 
 async function upsertUser(
   claims: any,
+  role?: string,
+  serie?: string,
 ) {
-  await storage.upsertUser({
+  // Buscar usuário existente para preservar dados
+  const existingUser = await storage.getUser(claims["sub"]);
+  
+  const userData: any = {
     id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    profileImageUrl: claims["profile_image_url"],
-  });
+    email: claims["email"] || existingUser?.email,
+    firstName: claims["first_name"] || existingUser?.firstName,
+    lastName: claims["last_name"] || existingUser?.lastName,
+    profileImageUrl: claims["profile_image_url"] || existingUser?.profileImageUrl,
+    // Preservar role e serie existentes se não forem fornecidos novos valores
+    role: role || existingUser?.role,
+    serie: serie || existingUser?.serie,
+  };
+  
+  await storage.upsertUser(userData);
 }
 
 export async function setupAuth(app: Express) {
@@ -77,6 +87,8 @@ export async function setupAuth(app: Express) {
   ) => {
     const user = {};
     updateUserSession(user, tokens);
+    
+    // Salvar usuário básico (role será salvo no callback)
     await upsertUser(tokens.claims());
     verified(null, user);
   };
@@ -138,17 +150,35 @@ export async function setupAuth(app: Express) {
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
       failureRedirect: "/",
-    })(req, res, (err) => {
+    })(req, res, async (err) => {
       if (err) {
         return next(err);
       }
       
       // Recupera o papel armazenado na sessão
       const selectedRole = (req.session as any).selectedRole;
+      const selectedSerie = (req.session as any).selectedSerie;
       const returnTo = (req.session as any).returnTo;
+      
+      // Salvar papel no banco de dados após autenticação bem-sucedida
+      if (selectedRole && req.user) {
+        try {
+          const userId = (req.user as any).claims?.sub;
+          if (userId) {
+            await upsertUser(
+              (req.user as any).claims,
+              selectedRole,
+              selectedSerie
+            );
+          }
+        } catch (error) {
+          console.error("Error saving role to database:", error);
+        }
+      }
       
       // Limpa o papel da sessão
       delete (req.session as any).selectedRole;
+      delete (req.session as any).selectedSerie;
       delete (req.session as any).returnTo;
       
       // Redireciona baseado no papel
