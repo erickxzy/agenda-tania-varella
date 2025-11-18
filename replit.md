@@ -221,7 +221,15 @@ O servidor iniciará na porta 5000 com Replit Auth habilitado.
 - Sophia Monteiro de Paula
 
 ## Última Atualização
-18 de Novembro de 2025 - Correção do erro de cadastro de aluno:
+18 de Novembro de 2025 - Integração de rotas legadas de autenticação manual:
+- Criado server/legacyRoutes.ts para suportar cadastro manual (email/senha)
+- Rotas legadas agora funcionam em paralelo com Replit Auth
+- Endpoints disponíveis: /api/cadastrar, /api/login, /api/cadastrar-direcao, /api/login-direcao
+- Soft delete mantido em /api/alunos/:id (UPDATE ativo=0 em vez de DELETE)
+- Uso de createRequire para interoperar TypeScript (ESM) com helpers CommonJS
+- Sistema híbrido: usuários podem escolher Google Auth OU cadastro manual tradicional
+
+18 de Novembro de 2025 - Correção do erro de cadastro com Replit Auth:
 - Corrigido endpoint /api/auth/update-profile para criar usuário automaticamente se não existir
 - Eliminado erro 404 "Usuário não encontrado" que impedia cadastro de novos alunos
 - Melhorado feedback de erro no frontend com toast messages
