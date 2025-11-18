@@ -178,18 +178,18 @@ export async function setupAuth(app: Express) {
         }
       }
       
-      // Salvar sessão antes de redirecionar (garantir persistência)
-      await new Promise<void>((resolve) => {
-        (req.session as any).save((err: any) => {
-          if (err) console.error("Session save error:", err);
-          resolve();
-        });
-      });
-      
-      // Limpa o papel temporário da sessão
+      // Limpar campos temporários da sessão ANTES de salvar
       delete (req.session as any).selectedRole;
       delete (req.session as any).selectedSerie;
       delete (req.session as any).returnTo;
+      
+      // Salvar sessão após limpeza (garantir persistência sem valores temporários)
+      await new Promise<void>((resolve) => {
+        (req.session as any).save((err: any) => {
+          if (err) console.error("❌ Session save error:", err);
+          resolve();
+        });
+      });
       
       // Redireciona baseado no papel
       if (selectedRole) {

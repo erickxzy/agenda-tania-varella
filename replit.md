@@ -221,12 +221,13 @@ O servidor iniciará na porta 5000 com Replit Auth habilitado.
 - Sophia Monteiro de Paula
 
 ## Última Atualização
-18 de Novembro de 2025 - Correção de redirecionamento pós-autenticação:
-- Ajustado callback OAuth para garantir persist\u00eancia da sessão antes de redirecionar
-- Adicionados logs de debug no callback (console do servidor)
-- Adicionados logs de debug no frontend (console do navegador)
-- Garantido que o role seja salvo no banco ANTES do redirect
-- Melhorado tratamento de timing entre salvar no banco e redirecionar
+18 de Novembro de 2025 - Correção completa do fluxo pós-autenticação:
+- Implementado fallback em /api/auth/user para usar session claims quando user não está no banco
+- Corrigida ordem de limpeza de sessão: limpar campos temporários ANTES de salvar sessão
+- Adicionados logs completos de debug no servidor e frontend para rastreamento
+- Garantido que role seja salvo no banco antes do redirect
+- Endpoint /api/auth/user sempre retorna objeto user válido (nunca undefined)
+- Sistema robusto contra race conditions e timing issues
 
 18 de Novembro de 2025 - Interface de cadastro com Google Auth:
 - Adicionada interface clara para cadastro usando Google/GitHub/Email

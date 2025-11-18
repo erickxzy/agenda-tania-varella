@@ -18,7 +18,25 @@ async function startServer() {
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      let user = await storage.getUser(userId);
+      
+      // Fallback: se user não existe no banco, construir a partir dos claims
+      if (!user) {
+        console.log(`⚠️ User ${userId} not yet in database, using session claims`);
+        user = {
+          id: req.user.claims.sub,
+          email: req.user.claims.email,
+          firstName: req.user.claims.first_name,
+          lastName: req.user.claims.last_name,
+          profileImageUrl: req.user.claims.profile_image_url,
+          role: null,
+          serie: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
+      
+      console.log(`✅ User ${userId} fetched with role: ${user.role || 'null'}`);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
