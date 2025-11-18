@@ -68,11 +68,8 @@ async function startServer() {
     }
   });
 
-  // Página inicial - sempre mostra seleção de papel (sem autenticação)
-  app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
-  });
-
+  // Servir arquivos estáticos do frontend (CSS, JS, imagens)
+  // express.static automaticamente serve index.html quando acessar a raiz
   app.use(express.static(path.join(__dirname, 'frontend')));
 
   app.listen(PORT, '0.0.0.0', () => {
