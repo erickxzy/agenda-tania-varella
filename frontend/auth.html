@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenda Escolar - Login</title>
+    <link rel="stylesheet" href="style.css?v=2025" />
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .auth-card {
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .auth-card h1 {
+            color: var(--title-color);
+            margin-bottom: 1rem;
+        }
+        
+        .auth-card p {
+            color: var(--text-tertiary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .auth-button {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .auth-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3);
+        }
+        
+        .user-info {
+            background: var(--input-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        
+        .user-info img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 1rem;
+        }
+        
+        .user-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-email {
+            color: var(--text-tertiary);
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .spinner {
+            border: 4px solid var(--input-border);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Alternar tema">
+        <span class="theme-icon">🌙</span>
+    </button>
+
+    <div class="auth-container">
+        <div class="card auth-card">
+            <div class="logo-header">
+                <span class="logo-emoji">📚</span>
+                <h1>Agenda Escolar Tânia Varella Ferreira</h1>
+            </div>
+            
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Carregando...</p>
+            </div>
+            
+            <div id="logged-out" class="hidden">
+                <p>Bem-vindo à nossa plataforma escolar! Faça login para acessar eventos, cardápios, avisos e muito mais.</p>
+                <button class="auth-button" onclick="window.location.href='/api/login'">
+                    🔐 Fazer Login
+                </button>
+            </div>
+            
+            <div id="logged-in" class="hidden">
+                <h2>Bem-vindo!</h2>
+                <div id="user-info" class="user-info"></div>
+                <button class="auth-button" onclick="window.location.href='/api/logout'">
+                    🚪 Sair
+                </button>
+                <br><br>
+                <button class="auth-button" style="background: linear-gradient(135deg, #4caf50, #45a049); margin-top: 1rem;" onclick="window.location.href='/index.html'">
+                    📚 Acessar Sistema
+                </button>
+            </div>
+            
+            <div id="error" class="error-message hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById("theme-toggle");
+        const themeIcon = document.querySelector(".theme-icon");
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem("theme") || "light";
+            if (savedTheme === "dark") {
+                document.body.classList.add("dark-mode");
+                themeIcon.textContent = "☀️";
+            } else {
+                document.body.classList.remove("dark-mode");
+                themeIcon.textContent = "🌙";
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle("dark-mode");
+            if (document.body.classList.contains("dark-mode")) {
+                themeIcon.textContent = "☀️";
+                localStorage.setItem("theme", "dark");
+            } else {
+                themeIcon.textContent = "🌙";
+                localStorage.setItem("theme", "light");
+            }
+        }
+
+        themeToggle.addEventListener("click", toggleTheme);
+        loadTheme();
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/user');
+                if (response.ok) {
+                    const user = await response.json();
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('logged-in').classList.remove('hidden');
+                    
+                    const userInfo = document.getElementById('user-info');
+                    userInfo.innerHTML = `
+                        ${user.profileImageUrl ? `<img src="${user.profileImageUrl}" alt="Profile">` : ''}
+                        <div class="user-name">${user.firstName || ''} ${user.lastName || ''}</div>
+                        ${user.email ? `<div class="user-email">${user.email}</div>` : ''}
+                    `;
+                } else {
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('logged-out').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').textContent = 'Erro ao verificar autenticação';
+                document.getElementById('error').classList.remove('hidden');
+                document.getElementById('logged-out').classList.remove('hidden');
+            }
+        }
+
+        checkAuth();
+    </script>
+</body>
+</html>

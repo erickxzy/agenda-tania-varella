@@ -1,149 +1,55 @@
 # Agenda Escolar Tânia Varella Ferreira
 
-## Visão Geral
-Sistema de agenda escolar desenvolvido em Node.js com Express e SQLite. Permite gerenciamento de eventos, cardápios, avisos e atividades para alunos e administração escolar.
+## Overview
+This project is an educational agenda system developed with Node.js, Express, and PostgreSQL (Replit Database). Its primary purpose is to manage events, meal plans, announcements, and activities for students and school administration. The system aims to streamline communication and organization within the school environment.
 
-## Estrutura do Projeto
+## User Preferences
+I prefer simple language and clear explanations. I want iterative development, with frequent updates and feedback loops. Ask before making major changes to the core architecture or public-facing features. I value detailed explanations for complex implementations.
 
-O projeto está organizado com separação clara entre backend e frontend:
+## System Architecture
+The system is built on a Node.js backend using Express, with data persistence handled by PostgreSQL (Replit Database) and Drizzle ORM. Frontend is developed with vanilla HTML, CSS, and JavaScript.
 
-```
-projeto/
-├── backend/              # Servidor Node.js
-│   ├── server.js        # API Express (porta 5000)
-│   ├── package.json     # Dependências do backend
-│   └── package-lock.json
-├── frontend/            # Interface do usuário
-│   ├── index.html       # Página principal
-│   ├── script.js        # Lógica do cliente
-│   └── style.css        # Estilos da aplicação
-├── backups/             # Backups automáticos do banco
-├── escola.db            # Banco de dados SQLite
-└── README.md            # Documentação completa
-```
+**UI/UX Decisions:**
+- Supports both light and dark themes.
+- Clear separation of concerns between student and administration interfaces.
+- Interactive tables for managing teachers' attendance.
+- Intuitive login/registration flow with role selection.
 
-## Tecnologias
-- Node.js 20
-- Express 5.1.0
-- SQLite (better-sqlite3)
-- bcryptjs (autenticação)
-- Frontend: HTML/CSS/JavaScript vanilla
+**Technical Implementations:**
+- **Backend:** Node.js 20, TypeScript, Express 5.1.0.
+- **Database:** PostgreSQL via `@neondatabase/serverless`, Drizzle ORM for schema management, `connect-pg-simple` for session storage.
+- **Authentication:**
+    - **Modern:** Replit Auth (OpenID Connect) for Google, GitHub, X, Apple, and email/password. Supports role-based authentication (Aluno, Direção, Administrador) with automatic user registration and profile updates.
+    - **Legacy:** Retained for backward compatibility using `bcryptjs` for password hashing.
+- **Frontend:** HTML, CSS, JavaScript for a responsive and interactive user experience.
+- **Security:** Replit Auth, secure session management (HttpOnly/Secure cookies), automatic token refresh, prepared statements for SQL injection prevention, and a connection pool for performance.
 
-## Funcionalidades
+**Feature Specifications:**
+- **For Students:**
+    - Login specific to classes (e.g., 1A, 2B, 3C).
+    - View class events, school meal plans, announcements, and activities (Quizizz, Khan Academy, Redação Paraná).
+    - Notification system and theme switching.
+- **For Administration:**
+    - Comprehensive administrative panel.
+    - Manage events by class.
+    - Edit weekly meal plans.
+    - Track teacher attendance/absences by class.
+    - Manage announcements and activities.
+    - View and delete registered students.
+- **Teacher Management:**
+    - Record presence/absence with automatic date stamping.
+    - Interactive table for real-time updates.
 
-### Para Alunos
-- Login por turma específica (1A, 1B, 1C, 1D, 2A, 2B, 2C, 3A, 3B, 3C)
-- Visualização de eventos da turma
-- Acesso ao cardápio escolar
-- Avisos e atividades (Quizizz, Khan Academy, Redação Paraná)
-- Sistema de notificações
-- Tema claro/escuro
+**System Design Choices:**
+- **Project Structure:** Clear separation into `server/` (backend), `shared/` (Drizzle schema), `backend/` (legacy APIs), and `frontend/`.
+- **Database Management:** Drizzle ORM for schema definition and migrations, with automated initial setup and seeding.
+- **Authentication Flow:** Role-based authentication where users select their role (Student, Admin, Management) before initiating the OIDC flow, ensuring a tailored experience. Student class selection is prompted post-authentication and saved locally.
 
-### Para Administração
-- Painel administrativo completo
-- Gerenciamento de eventos por série
-- Edição do cardápio semanal
-- Controle de presença/falta de professores por turma
-- Gerenciamento de avisos e atividades
-- Visualização e exclusão de alunos cadastrados
-
-## Turmas e Professores
-O sistema gerencia 10 turmas com 127 professores distribuídos:
-- **1º Ano**: Turmas A, B, C, D (51 professores)
-- **2º Ano**: Turmas A, B, C (37 professores)
-- **3º Ano**: Turmas A, B, C (39 professores)
-
-### Gestão de Professores
-- Registro de presença/falta por turma
-- Data de registro automática
-- Interface com tabela interativa
-- Atualização em tempo real
-
-## Banco de Dados
-
-### Tabelas Principais
-- `alunos` - Dados dos alunos
-- `direcao` - Membros da direção
-- `eventos` - Eventos escolares por série
-- `cardapio` - Cardápio semanal
-- `professores` - Professores gerais (legado)
-- `professores_turma` - Professores por turma com status de presença
-- `avisos` - Avisos e atividades
-- `recuperacao_senha` - Sistema de recuperação de senha
-
-## APIs REST
-
-### Alunos e Autenticação
-- `POST /api/cadastrar` - Cadastro de aluno
-- `POST /api/login` - Login de aluno
-- `POST /api/cadastrar-direcao` - Cadastro direção
-- `POST /api/login-direcao` - Login direção
-- `POST /api/recuperar-senha` - Solicitar código
-- `POST /api/resetar-senha` - Redefinir senha
-- `GET /api/alunos` - Listar alunos
-- `DELETE /api/alunos/:id` - Excluir aluno
-
-### Eventos e Cardápio
-- `GET /api/eventos/:serie` - Eventos por série
-- `POST /api/eventos` - Criar evento
-- `PUT /api/eventos/:id` - Atualizar evento
-- `DELETE /api/eventos/:id` - Deletar evento
-- `GET /api/cardapio/:dia` - Cardápio do dia
-- `PUT /api/cardapio/:dia` - Atualizar cardápio
-
-### Professores
-- `GET /api/professores` - Professores gerais
-- `PUT /api/professores/:id` - Atualizar professor
-- `GET /api/turmas` - Listar turmas
-- `GET /api/professores-turma` - Todos os professores por turma
-- `GET /api/professores-turma/:turma` - Professores de uma turma
-- `PUT /api/professores-turma/:id` - Atualizar status do professor
-
-### Avisos
-- `GET /api/avisos` - Listar avisos
-- `POST /api/avisos` - Criar aviso
-- `PUT /api/avisos/:id` - Atualizar aviso
-- `DELETE /api/avisos/:id` - Deletar aviso
-
-## Executar o Projeto
-O workflow "webserver" está configurado para rodar automaticamente:
-```bash
-node server.js
-```
-
-O servidor iniciará na porta 5000 e criará/populará o banco de dados automaticamente.
-
-## Estrutura de Arquivos
-```
-.
-├── server.js               # Servidor Express + APIs
-├── escola.db               # Banco SQLite
-├── package.json            # Dependências
-├── package-lock.json
-├── .gitignore
-├── replit.md              # Documentação
-└── public/                # Frontend
-    ├── index.html         # Interface
-    ├── script.js          # JavaScript
-    ├── style.css          # Estilos
-    └── *.png              # Imagens
-```
-
-## Segurança
-- Senhas criptografadas com bcryptjs
-- Validação de e-mails (@escola.pr.gov.br)
-- Sistema de recuperação de senha com código de 6 dígitos
-- Códigos expiram em 30 minutos
-- Prepared statements no SQLite (proteção SQL injection)
-
-## Criadores
-- Erick Gustavo Dos Santos Gomes
-- Adryan Kaick da Silva Cassula
-- Victor Hugo Nunes da Costa
-- Sophia Monteiro de Paula
-
-## Última Atualização
-01 de Novembro de 2025 - Correções no painel administrativo:
-- Eventos agora exibidos por turma específica (1A-1D, 2A-2C, 3A-3C) ao invés de séries genéricas
-- Corrigido status de professores: agora usa "Falta" ao invés de "Ausente" para compatibilidade com o banco de dados
-- Sistema de presença/falta de professores funcionando corretamente
+## External Dependencies
+- **Replit Database:** PostgreSQL for persistent data storage.
+- **Replit Auth:** OpenID Connect provider for user authentication.
+- **`@neondatabase/serverless`:** PostgreSQL driver for serverless environments.
+- **Drizzle ORM:** TypeScript ORM for PostgreSQL.
+- **Express:** Web application framework for Node.js.
+- **Passport.js:** Authentication middleware for Node.js (likely used with legacy system).
+- **`bcryptjs`:** Password hashing library (used for legacy authentication).

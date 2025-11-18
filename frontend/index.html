@@ -1,345 +1,821 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-        <meta http-equiv="Pragma" content="no-cache">
-        <meta http-equiv="Expires" content="0">
-        <title>Agenda Escolar Tânia Varella Ferreira</title>
-        <link rel="stylesheet" href="style.css?v=2025">
-</head>
-<body>
-        <div id="toast-container" class="toast-container"></div>
-        
-        <button id="theme-toggle" class="theme-toggle" aria-label="Alternar tema">
-                <span class="theme-icon">🌙</span>
-        </button>
-        
-        <div class="logo-header">
-                <span class="logo-emoji">📚</span>
-                <h1 class="titulo" id="tituloApp">Agenda Escolar Tânia Varella Ferreira</h1>
-        </div>
+        <head>
+                <meta charset="UTF-8" />
+                <meta
+                        name="viewport"
+                        content="width=device-width, initial-scale=1.0"
+                />
+                <meta
+                        http-equiv="Cache-Control"
+                        content="no-cache, no-store, must-revalidate"
+                />
+                <meta http-equiv="Pragma" content="no-cache" />
+                <meta http-equiv="Expires" content="0" />
+                <title>Agenda Escolar Tânia Varella Ferreira</title>
+                <link rel="stylesheet" href="style.css?v=2025" />
+        </head>
+        <body>
+                <div id="toast-container" class="toast-container"></div>
 
-        <div id="selecaoBox" class="card selecao-card">
-                <h2>Bem-vindo à Nossa Agenda Escolar</h2>
-                <p style="color: var(--text-tertiary); margin-bottom: 25px; text-align: center; line-height: 1.6;">
-                        📚 Gerencie eventos, cardápios, avisos e muito mais<br>
-                        ✨ Escolha como deseja acessar o sistema:
-                </p>
-                <div class="opcoes-entrada">
-                        <button class="btn-opcao" id="btnDirecao">
-                                <span class="icone">👨‍💼</span>
-                                <span class="texto">Direção</span>
-                        </button>
-                        <button class="btn-opcao" id="btnAluno">
-                                <span class="icone">🧑‍🎓</span>
-                                <span class="texto">Aluno</span>
-                        </button>
+                <button
+                        id="theme-toggle"
+                        class="theme-toggle"
+                        aria-label="Alternar tema"
+                >
+                        <span class="theme-icon">🌙</span>
+                </button>
+
+                <div class="logo-header">
+                        <span class="logo-emoji">📚</span>
+                        <h1 class="titulo" id="tituloApp">
+                                Agenda Escolar Tânia Varella Ferreira
+                        </h1>
                 </div>
-                <p class="admin-secreto" id="adminSecreto">Administrador</p>
-        </div>
 
-        <div id="loginBox" class="card login-card hidden">
-                <button class="btn-voltar" id="btnVoltar">← Voltar</button>
-                <h2 id="formTitulo">Login do Aluno</h2>
-                
-                <form id="loginForm">
-                        <input type="text" id="nome" placeholder="Nome completo" autocomplete="name">
-                        <input type="email" id="email" placeholder="E-mail" autocomplete="email">
-                        <input type="password" id="senha" placeholder="Senha" required autocomplete="current-password">
-                        <select id="serie" autocomplete="off">
-                                <option value="">Selecione a turma</option>
-                                <option value="1A">1º Ano - Turma A</option>
-                                <option value="1B">1º Ano - Turma B</option>
-                                <option value="1C">1º Ano - Turma C</option>
-                                <option value="1D">1º Ano - Turma D</option>
-                                <option value="2A">2º Ano - Turma A</option>
-                                <option value="2B">2º Ano - Turma B</option>
-                                <option value="2C">2º Ano - Turma C</option>
-                                <option value="3A">3º Ano - Turma A</option>
-                                <option value="3B">3º Ano - Turma B</option>
-                                <option value="3C">3º Ano - Turma C</option>
-                        </select>
-                        <button type="submit" id="botaoLogin">Entrar</button>
-                        <p class="alternar">
-                                Não tem conta? <a href="#" id="mostrarCadastro">Cadastrar</a>
+                <div id="selecaoBox" class="card selecao-card">
+                        <h2>Bem-vindo à Nossa Agenda Escolar</h2>
+                        <p
+                                style="
+                                        color: var(--text-tertiary);
+                                        margin-bottom: 15px;
+                                        text-align: center;
+                                        line-height: 1.6;
+                                "
+                        >
+                                📚 Gerencie eventos, cardápios, avisos e muito
+                                mais<br />
+                                ✨ Escolha como deseja acessar o sistema:
                         </p>
-                        <p class="alternar" id="esqueceuSenhaContainer" style="display: none;">
-                                <a href="#" id="esqueceuSenha">Esqueceu sua senha?</a>
+                        
+                        <div style="
+                                background: var(--card-bg-secondary, #f8f9fa);
+                                padding: 15px;
+                                border-radius: 8px;
+                                margin-bottom: 20px;
+                                border-left: 4px solid var(--primary-color, #4CAF50);
+                        ">
+                                <p style="
+                                        margin: 0;
+                                        color: var(--text-secondary);
+                                        font-size: 0.9em;
+                                        text-align: center;
+                                        line-height: 1.5;
+                                ">
+                                        🔐 <strong>Cadastro e Login com Google</strong><br>
+                                        Clique no seu perfil abaixo para entrar ou criar sua conta usando Google, GitHub ou email
+                                </p>
+                        </div>
+                        
+                        <div class="opcoes-entrada">
+                                <button class="btn-opcao" id="btnDirecao">
+                                        <span class="icone">👨‍💼</span>
+                                        <span class="texto">Direção</span>
+                                        <span class="subtexto">Entrar ou Cadastrar</span>
+                                </button>
+                                <button class="btn-opcao" id="btnAluno">
+                                        <span class="icone">🧑‍🎓</span>
+                                        <span class="texto">Aluno</span>
+                                        <span class="subtexto">Entrar ou Cadastrar</span>
+                                </button>
+                        </div>
+                        <p class="admin-secreto" id="adminSecreto">
+                                Administrador
                         </p>
-                </form>
-        </div>
+                        
+                        <div style="
+                                margin-top: 20px;
+                                padding-top: 15px;
+                                border-top: 1px solid var(--border-color, #e0e0e0);
+                        ">
+                                <p style="
+                                        margin: 0;
+                                        color: var(--text-tertiary);
+                                        font-size: 0.85em;
+                                        text-align: center;
+                                ">
+                                        📧 Possui conta antiga? <a href="#" id="loginLegado" style="color: var(--primary-color); text-decoration: none;">Entrar com email e senha</a>
+                                </p>
+                        </div>
+                </div>
 
-        <div id="alunoPanel" class="card painel-aluno hidden">
-                <div class="painel-header">
-                        <h2 id="boasVindas"></h2>
-                        <div class="notificacao-container">
-                                <div class="sininho" id="sininho">
-                                        🔔
-                                        <span class="badge-notificacao" id="badgeNotificacao">15</span>
-                                </div>
-                                <div id="notificacaoDropdown" class="notificacao-dropdown">
-                                        <div class="notificacao-header">
-                                                <span>📬 Notificações</span>
-                                                <button class="notificacao-limpar" id="limparNotificacoes">Limpar</button>
+                <div id="loginBox" class="card login-card hidden">
+                        <button class="btn-voltar" id="btnVoltar">
+                                ← Voltar
+                        </button>
+                        <h2 id="formTitulo">Login do Aluno</h2>
+
+                        <form id="loginForm">
+                                <input
+                                        type="text"
+                                        id="nome"
+                                        placeholder="Nome completo"
+                                        autocomplete="name"
+                                />
+                                <input
+                                        type="email"
+                                        id="email"
+                                        placeholder="E-mail"
+                                        autocomplete="email"
+                                />
+                                <input
+                                        type="password"
+                                        id="senha"
+                                        placeholder="Senha"
+                                        required
+                                        autocomplete="current-password"
+                                />
+                                <select id="serie" autocomplete="off">
+                                        <option value="">
+                                                Selecione a turma
+                                        </option>
+                                        <option value="1A">
+                                                1º Ano - Turma A
+                                        </option>
+                                        <option value="1B">
+                                                1º Ano - Turma B
+                                        </option>
+                                        <option value="1C">
+                                                1º Ano - Turma C
+                                        </option>
+                                        <option value="1D">
+                                                1º Ano - Turma D
+                                        </option>
+                                        <option value="2A">
+                                                2º Ano - Turma A
+                                        </option>
+                                        <option value="2B">
+                                                2º Ano - Turma B
+                                        </option>
+                                        <option value="2C">
+                                                2º Ano - Turma C
+                                        </option>
+                                        <option value="3A">
+                                                3º Ano - Turma A
+                                        </option>
+                                        <option value="3B">
+                                                3º Ano - Turma B
+                                        </option>
+                                        <option value="3C">
+                                                3º Ano - Turma C
+                                        </option>
+                                </select>
+                                <button type="submit" id="botaoLogin">
+                                        Entrar
+                                </button>
+                                <p class="alternar">
+                                        Não tem conta?
+                                        <a href="#" id="mostrarCadastro"
+                                                >Cadastrar</a
+                                        >
+                                </p>
+                                <p
+                                        class="alternar"
+                                        id="esqueceuSenhaContainer"
+                                        style="display: none"
+                                >
+                                        <a href="#" id="esqueceuSenha"
+                                                >Esqueceu sua senha?</a
+                                        >
+                                </p>
+                        </form>
+                </div>
+
+                <div id="alunoPanel" class="card painel-aluno hidden">
+                        <div class="painel-header">
+                                <h2 id="boasVindas"></h2>
+                                <div class="notificacao-container">
+                                        <div class="sininho" id="sininho">
+                                                🔔
+                                                <span
+                                                        class="badge-notificacao"
+                                                        id="badgeNotificacao"
+                                                        >15</span
+                                                >
                                         </div>
-                                        <div class="notificacao-lista" id="listaNotificacoes">
-                                                <div class="notificacao-vazia">
-                                                        <div class="notificacao-vazia-icone">📭</div>
-                                                        <p>Nenhuma notificação no momento</p>
+                                        <div
+                                                id="notificacaoDropdown"
+                                                class="notificacao-dropdown"
+                                        >
+                                                <div class="notificacao-header">
+                                                        <span
+                                                                >📬
+                                                                Notificações</span
+                                                        >
+                                                        <button
+                                                                class="notificacao-limpar"
+                                                                id="limparNotificacoes"
+                                                        >
+                                                                Limpar
+                                                        </button>
+                                                </div>
+                                                <div
+                                                        class="notificacao-lista"
+                                                        id="listaNotificacoes"
+                                                >
+                                                        <div
+                                                                class="notificacao-vazia"
+                                                        >
+                                                                <div
+                                                                        class="notificacao-vazia-icone"
+                                                                >
+                                                                        📭
+                                                                </div>
+                                                                <p>
+                                                                        Nenhuma
+                                                                        notificação
+                                                                        no
+                                                                        momento
+                                                                </p>
+                                                        </div>
                                                 </div>
                                         </div>
+                                        <button id="sairAluno" class="btn-sair">
+                                                Sair
+                                        </button>
                                 </div>
-                                <button id="sairAluno" class="btn-sair">Sair</button>
+                        </div>
+
+                        <p
+                                id="turma"
+                                style="
+                                        font-size: 1.1rem;
+                                        font-weight: 600;
+                                        margin-bottom: 25px;
+                                        color: var(--text-secondary);
+                                "
+                        ></p>
+
+                        <div class="secao-painel">
+                                <h3>📅 Próximos Eventos</h3>
+                                <ul
+                                        id="listaEventos"
+                                        class="eventos-lista"
+                                ></ul>
+                        </div>
+
+                        <div class="secao-painel">
+                                <h3>🍽️ Cardápio do Dia</h3>
+                                <div
+                                        id="cardapioDoDia"
+                                        class="cardapio-dia"
+                                ></div>
                         </div>
                 </div>
 
-                <p id="turma" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 25px; color: var(--text-secondary);"></p>
+                <div id="adminPanel" class="card painel-admin hidden">
+                        <div class="painel-header">
+                                <h2>🧩 Painel do Administrador</h2>
+                                <button id="sairAdmin" class="btn-sair">
+                                        Sair
+                                </button>
+                        </div>
 
-                <div class="secao-painel">
-                        <h3>📅 Próximos Eventos</h3>
-                        <ul id="listaEventos" class="eventos-lista"></ul>
-                </div>
+                        <div class="admin-menu-categorias">
+                                <button
+                                        class="btn-categoria active"
+                                        data-secao="turmas"
+                                >
+                                        <span class="categoria-icone">🧑‍🎓</span>
+                                        <span class="categoria-texto"
+                                                >Turmas</span
+                                        >
+                                </button>
+                                <button
+                                        class="btn-categoria"
+                                        data-secao="avisos"
+                                >
+                                        <span class="categoria-icone">📢</span>
+                                        <span class="categoria-texto"
+                                                >Avisos</span
+                                        >
+                                </button>
+                                <button
+                                        class="btn-categoria"
+                                        data-secao="cardapio"
+                                >
+                                        <span class="categoria-icone">🍽️</span>
+                                        <span class="categoria-texto"
+                                                >Cardápio</span
+                                        >
+                                </button>
+                                <button class="btn-categoria" data-secao="logs">
+                                        <span class="categoria-icone">📊</span>
+                                        <span class="categoria-texto"
+                                                >Logs</span
+                                        >
+                                </button>
+                                <button
+                                        class="btn-categoria"
+                                        data-secao="eventos"
+                                >
+                                        <span class="categoria-icone">📅</span>
+                                        <span class="categoria-texto"
+                                                >Eventos</span
+                                        >
+                                </button>
+                                <button
+                                        class="btn-categoria"
+                                        data-secao="professores"
+                                >
+                                        <span class="categoria-icone">👨‍🏫</span>
+                                        <span class="categoria-texto"
+                                                >Professores</span
+                                        >
+                                </button>
+                        </div>
 
-                <div class="secao-painel">
-                        <h3>🍽️ Cardápio do Dia</h3>
-                        <div id="cardapioDoDia" class="cardapio-dia"></div>
-                </div>
-        </div>
+                        <div id="secao-turmas" class="admin-secao active">
+                                <h3>🧑‍🎓 Alunos por Turma</h3>
+                                <div id="containerTabelaAlunos"></div>
+                        </div>
 
-        <div id="adminPanel" class="card painel-admin hidden">
-                <div class="painel-header">
-                        <h2>🧩 Painel do Administrador</h2>
-                        <button id="sairAdmin" class="btn-sair">Sair</button>
-                </div>
+                        <div id="secao-avisos" class="admin-secao hidden">
+                                <h3>📢 Gerenciar Avisos e Atividades</h3>
+                                <button id="btnNovoAviso" class="btn-adicionar">
+                                        + Novo Aviso
+                                </button>
+                                <div
+                                        id="avisosAdmin"
+                                        class="avisos-lista"
+                                ></div>
+                        </div>
 
-                <div class="admin-menu-categorias">
-                        <button class="btn-categoria active" data-secao="turmas">
-                                <span class="categoria-icone">🧑‍🎓</span>
-                                <span class="categoria-texto">Turmas</span>
-                        </button>
-                        <button class="btn-categoria" data-secao="avisos">
-                                <span class="categoria-icone">📢</span>
-                                <span class="categoria-texto">Avisos</span>
-                        </button>
-                        <button class="btn-categoria" data-secao="cardapio">
-                                <span class="categoria-icone">🍽️</span>
-                                <span class="categoria-texto">Cardápio</span>
-                        </button>
-                        <button class="btn-categoria" data-secao="logs">
-                                <span class="categoria-icone">📊</span>
-                                <span class="categoria-texto">Logs</span>
-                        </button>
-                        <button class="btn-categoria" data-secao="eventos">
-                                <span class="categoria-icone">📅</span>
-                                <span class="categoria-texto">Eventos</span>
-                        </button>
-                        <button class="btn-categoria" data-secao="professores">
-                                <span class="categoria-icone">👨‍🏫</span>
-                                <span class="categoria-texto">Professores</span>
-                        </button>
-                </div>
+                        <div id="secao-cardapio" class="admin-secao hidden">
+                                <h3>🍽️ Cardápio do Dia</h3>
+                                <div
+                                        id="cardapioAdmin"
+                                        class="cardapio-dia"
+                                ></div>
+                        </div>
 
-                <div id="secao-turmas" class="admin-secao active">
-                        <h3>🧑‍🎓 Alunos por Turma</h3>
-                        <div id="containerTabelaAlunos"></div>
-                </div>
+                        <div id="secao-logs" class="admin-secao hidden">
+                                <h3>📊 Histórico de Logins</h3>
+                                <div id="containerLogs"></div>
+                        </div>
 
-                <div id="secao-avisos" class="admin-secao hidden">
-                        <h3>📢 Gerenciar Avisos e Atividades</h3>
-                        <button id="btnNovoAviso" class="btn-adicionar">+ Novo Aviso</button>
-                        <div id="avisosAdmin" class="avisos-lista"></div>
-                </div>
+                        <div id="secao-eventos" class="admin-secao hidden">
+                                <h3>📅 Próximos Eventos por Turma</h3>
+                                <div class="turmas-container"></div>
+                        </div>
 
-                <div id="secao-cardapio" class="admin-secao hidden">
-                        <h3>🍽️ Cardápio do Dia</h3>
-                        <div id="cardapioAdmin" class="cardapio-dia"></div>
-                </div>
-
-                <div id="secao-logs" class="admin-secao hidden">
-                        <h3>📊 Histórico de Logins</h3>
-                        <div id="containerLogs"></div>
-                </div>
-
-                <div id="secao-eventos" class="admin-secao hidden">
-                        <h3>📅 Próximos Eventos por Turma</h3>
-                        <div class="turmas-container"></div>
-                </div>
-
-                <div id="secao-professores" class="admin-secao hidden">
-                        <h3>👨‍🏫 Professores por Turma (Presença/Falta)</h3>
-                        <div class="turmas-professores-container">
-                                <label for="selecionarTurma">Selecione a turma:</label>
-                                <select id="selecionarTurma">
-                                        <option value="">Escolha uma turma</option>
-                                        <option value="1A">1º Ano - Turma A</option>
-                                        <option value="1B">1º Ano - Turma B</option>
-                                        <option value="1C">1º Ano - Turma C</option>
-                                        <option value="1D">1º Ano - Turma D</option>
-                                        <option value="2A">2º Ano - Turma A</option>
-                                        <option value="2B">2º Ano - Turma B</option>
-                                        <option value="2C">2º Ano - Turma C</option>
-                                        <option value="3A">3º Ano - Turma A</option>
-                                        <option value="3B">3º Ano - Turma B</option>
-                                        <option value="3C">3º Ano - Turma C</option>
-                                </select>
-                                <div id="professoresTurma" class="professores-turma-lista"></div>
+                        <div id="secao-professores" class="admin-secao hidden">
+                                <h3>
+                                        👨‍🏫 Professores por Turma
+                                        (Presença/Falta)
+                                </h3>
+                                <div class="turmas-professores-container">
+                                        <label for="selecionarTurma"
+                                                >Selecione a turma:</label
+                                        >
+                                        <select id="selecionarTurma">
+                                                <option value="">
+                                                        Escolha uma turma
+                                                </option>
+                                                <option value="1A">
+                                                        1º Ano - Turma A
+                                                </option>
+                                                <option value="1B">
+                                                        1º Ano - Turma B
+                                                </option>
+                                                <option value="1C">
+                                                        1º Ano - Turma C
+                                                </option>
+                                                <option value="1D">
+                                                        1º Ano - Turma D
+                                                </option>
+                                                <option value="2A">
+                                                        2º Ano - Turma A
+                                                </option>
+                                                <option value="2B">
+                                                        2º Ano - Turma B
+                                                </option>
+                                                <option value="2C">
+                                                        2º Ano - Turma C
+                                                </option>
+                                                <option value="3A">
+                                                        3º Ano - Turma A
+                                                </option>
+                                                <option value="3B">
+                                                        3º Ano - Turma B
+                                                </option>
+                                                <option value="3C">
+                                                        3º Ano - Turma C
+                                                </option>
+                                        </select>
+                                        <div
+                                                id="professoresTurma"
+                                                class="professores-turma-lista"
+                                        ></div>
+                                </div>
                         </div>
                 </div>
-        </div>
 
-        <button id="btnCriadores" class="btn-criadores">👥 Criadores</button>
+                <button id="btnCriadores" class="btn-criadores">
+                        👥 Criadores
+                </button>
 
-        <div id="modalCriadores" class="modal-overlay hidden" style="display: none;">
-                <div class="modal-conteudo">
-                        <h2>🌟 Criadores do Site</h2>
-                        <ul class="criadores-lista">
-                                <li>🎓 Erick Gustavo Dos Santos Gomes</li>
-                                <li>🎓 Adryan Kaick da Silva Cassula</li>
-                                <li>🎓 Victor Hugo Nunes da Costa</li>
-                                <li>🎓 Sophia Monteiro de Paula</li>
-                                <li>🎓 Yasmin Victoria Gomes de Souza</li>
-                                <li>🎓 Miguel Antonio Barbosa Nascimento</li>
-                        </ul>
-                        <button id="btnFecharModal" class="btn-fechar-modal">Fechar</button>
+                <div
+                        id="modalCriadores"
+                        class="modal-overlay hidden"
+                        style="display: none"
+                >
+                        <div class="modal-conteudo">
+                                <h2>🌟 Criadores do Site</h2>
+                                <ul class="criadores-lista">
+                                        <li>
+                                                🎓 Erick Gustavo Dos Santos
+                                                Gomes
+                                        </li>
+                                        <li>
+                                                🎓 Adryan Kaick da Silva Cassula
+                                        </li>
+                                        <li>🎓 Victor Hugo Nunes da Costa</li>
+                                        <li>🎓 Sophia Monteiro de Paula</li>
+                                        <li>
+                                                🎓 Yasmin Victoria Gomes de
+                                                Souza
+                                        </li>
+                                        <li>
+                                                🎓 Miguel Antonio Barbosa
+                                                Nascimento
+                                        </li>
+                                </ul>
+                                <button
+                                        id="btnFecharModal"
+                                        class="btn-fechar-modal"
+                                >
+                                        Fechar
+                                </button>
+                        </div>
                 </div>
-        </div>
 
-        <div id="modalRecuperarSenha" class="modal-overlay hidden" style="display: none;">
-                <div class="modal-conteudo">
-                        <h2 id="tituloRecuperar">🔑 Recuperar Senha</h2>
-                        
-                        <div id="etapa1Recuperar">
-                                <p style="color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
-                                        Digite seu e-mail cadastrado. Enviaremos um código de verificação.
-                                </p>
-                                <form id="formRecuperarSenha">
-                                        <input type="email" id="emailRecuperar" placeholder="Digite seu e-mail" required>
-                                        <button type="submit" class="btn-fechar-modal" style="width: 100%; margin-top: 15px;">
-                                                📧 Enviar Código
+                <div
+                        id="modalRecuperarSenha"
+                        class="modal-overlay hidden"
+                        style="display: none"
+                >
+                        <div class="modal-conteudo">
+                                <h2 id="tituloRecuperar">🔑 Recuperar Senha</h2>
+
+                                <div id="etapa1Recuperar">
+                                        <p
+                                                style="
+                                                        color: var(
+                                                                --text-secondary
+                                                        );
+                                                        margin-bottom: 20px;
+                                                        text-align: center;
+                                                "
+                                        >
+                                                Digite seu e-mail cadastrado.
+                                                Enviaremos um código de
+                                                verificação.
+                                        </p>
+                                        <form id="formRecuperarSenha">
+                                                <input
+                                                        type="email"
+                                                        id="emailRecuperar"
+                                                        placeholder="Digite seu e-mail"
+                                                        required
+                                                />
+                                                <button
+                                                        type="submit"
+                                                        class="btn-fechar-modal"
+                                                        style="
+                                                                width: 100%;
+                                                                margin-top: 15px;
+                                                        "
+                                                >
+                                                        📧 Enviar Código
+                                                </button>
+                                        </form>
+                                </div>
+
+                                <div id="etapa2Recuperar" style="display: none">
+                                        <p
+                                                style="
+                                                        color: var(
+                                                                --text-secondary
+                                                        );
+                                                        margin-bottom: 20px;
+                                                        text-align: center;
+                                                "
+                                        >
+                                                Digite o código de 6 dígitos que
+                                                você recebeu e sua nova senha.
+                                        </p>
+                                        <form id="formResetarSenha">
+                                                <input
+                                                        type="text"
+                                                        id="codigoRecuperar"
+                                                        placeholder="Código de 6 dígitos"
+                                                        maxlength="6"
+                                                        required
+                                                        autocomplete="one-time-code"
+                                                />
+                                                <input
+                                                        type="password"
+                                                        id="novaSenhaRecuperar"
+                                                        placeholder="Nova senha"
+                                                        required
+                                                        autocomplete="new-password"
+                                                />
+                                                <input
+                                                        type="password"
+                                                        id="confirmarSenhaRecuperar"
+                                                        placeholder="Confirmar nova senha"
+                                                        required
+                                                        autocomplete="new-password"
+                                                />
+                                                <button
+                                                        type="submit"
+                                                        class="btn-fechar-modal"
+                                                        style="
+                                                                width: 100%;
+                                                                margin-top: 15px;
+                                                        "
+                                                >
+                                                        🔐 Alterar Senha
+                                                </button>
+                                        </form>
+                                </div>
+
+                                <button
+                                        id="btnFecharRecuperar"
+                                        class="btn-fechar-modal"
+                                        style="
+                                                background: var(
+                                                        --text-tertiary
+                                                );
+                                                margin-top: 10px;
+                                        "
+                                >
+                                        Cancelar
+                                </button>
+                                <p
+                                        id="mensagemRecuperar"
+                                        style="
+                                                margin-top: 15px;
+                                                text-align: center;
+                                                font-size: 0.9rem;
+                                        "
+                                ></p>
+                        </div>
+                </div>
+
+                <div
+                        id="modalNovoAviso"
+                        class="modal-overlay hidden"
+                        style="display: none"
+                >
+                        <div class="modal-conteudo">
+                                <h2>📝 Novo Aviso</h2>
+                                <form id="formNovoAviso">
+                                        <label>Tipo de Aviso:</label>
+                                        <select id="novoTipoAviso" required>
+                                                <option value="">
+                                                        Selecione um tipo
+                                                </option>
+                                                <option value="Quizizz">
+                                                        Quizizz
+                                                </option>
+                                                <option value="Khan Academy">
+                                                        Khan Academy
+                                                </option>
+                                                <option value="Redação Paraná">
+                                                        Redação Paraná
+                                                </option>
+                                                <option value="Geral">
+                                                        Geral
+                                                </option>
+                                                <option value="Urgente">
+                                                        Urgente
+                                                </option>
+                                        </select>
+
+                                        <label>Professor:</label>
+                                        <input
+                                                type="text"
+                                                id="novoProfessor"
+                                                placeholder="Nome do professor"
+                                                required
+                                                minlength="3"
+                                        />
+
+                                        <label>Título:</label>
+                                        <input
+                                                type="text"
+                                                id="novoTitulo"
+                                                placeholder="Título do aviso (mínimo 5 caracteres)"
+                                                required
+                                                minlength="5"
+                                        />
+
+                                        <label>Descrição:</label>
+                                        <textarea
+                                                id="novoDescricao"
+                                                placeholder="Descrição do aviso (mínimo 10 caracteres)"
+                                                required
+                                                rows="4"
+                                                minlength="10"
+                                        ></textarea>
+
+                                        <label>Data:</label>
+                                        <input
+                                                type="text"
+                                                id="novoData"
+                                                placeholder="DD/MM/AAAA"
+                                                maxlength="10"
+                                                required
+                                                pattern="\d{2}/\d{2}/\d{4}"
+                                        />
+
+                                        <button
+                                                type="submit"
+                                                class="btn-fechar-modal"
+                                                style="
+                                                        width: 100%;
+                                                        margin-top: 15px;
+                                                "
+                                        >
+                                                ✅ Criar Aviso
                                         </button>
                                 </form>
+                                <button
+                                        id="btnFecharNovoAviso"
+                                        class="btn-fechar-modal"
+                                        style="
+                                                background: var(
+                                                        --text-tertiary
+                                                );
+                                                margin-top: 10px;
+                                        "
+                                >
+                                        Cancelar
+                                </button>
                         </div>
+                </div>
 
-                        <div id="etapa2Recuperar" style="display: none;">
-                                <p style="color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
-                                        Digite o código de 6 dígitos que você recebeu e sua nova senha.
-                                </p>
-                                <form id="formResetarSenha">
-                                        <input type="text" id="codigoRecuperar" placeholder="Código de 6 dígitos" maxlength="6" required autocomplete="one-time-code">
-                                        <input type="password" id="novaSenhaRecuperar" placeholder="Nova senha" required autocomplete="new-password">
-                                        <input type="password" id="confirmarSenhaRecuperar" placeholder="Confirmar nova senha" required autocomplete="new-password">
-                                        <button type="submit" class="btn-fechar-modal" style="width: 100%; margin-top: 15px;">
-                                                🔐 Alterar Senha
+                <div
+                        id="modalEditarAviso"
+                        class="modal-overlay hidden"
+                        style="display: none"
+                >
+                        <div class="modal-conteudo">
+                                <h2>✏️ Editar Aviso</h2>
+                                <form id="formEditarAviso">
+                                        <label>Tipo de Aviso:</label>
+                                        <select id="editTipoAviso" required>
+                                                <option value="Quizizz">
+                                                        Quizizz
+                                                </option>
+                                                <option value="Khan Academy">
+                                                        Khan Academy
+                                                </option>
+                                                <option value="Redação Paraná">
+                                                        Redação Paraná
+                                                </option>
+                                                <option value="Geral">
+                                                        Geral
+                                                </option>
+                                                <option value="Urgente">
+                                                        Urgente
+                                                </option>
+                                        </select>
+
+                                        <label>Professor:</label>
+                                        <input
+                                                type="text"
+                                                id="editProfessor"
+                                                placeholder="Nome do professor"
+                                                required
+                                                minlength="3"
+                                        />
+
+                                        <label>Título:</label>
+                                        <input
+                                                type="text"
+                                                id="editTitulo"
+                                                placeholder="Título do aviso (mínimo 5 caracteres)"
+                                                required
+                                                minlength="5"
+                                        />
+
+                                        <label>Descrição:</label>
+                                        <textarea
+                                                id="editDescricao"
+                                                placeholder="Descrição do aviso (mínimo 10 caracteres)"
+                                                required
+                                                rows="4"
+                                                minlength="10"
+                                        ></textarea>
+
+                                        <label>Data:</label>
+                                        <input
+                                                type="text"
+                                                id="editData"
+                                                placeholder="DD/MM/AAAA"
+                                                maxlength="10"
+                                                required
+                                                pattern="\d{2}/\d{2}/\d{4}"
+                                        />
+
+                                        <button
+                                                type="submit"
+                                                class="btn-fechar-modal"
+                                                style="
+                                                        width: 100%;
+                                                        margin-top: 15px;
+                                                "
+                                        >
+                                                💾 Salvar Alterações
                                         </button>
                                 </form>
+                                <button
+                                        id="btnFecharEditarAviso"
+                                        class="btn-fechar-modal"
+                                        style="
+                                                background: var(
+                                                        --text-tertiary
+                                                );
+                                                margin-top: 10px;
+                                        "
+                                >
+                                        Cancelar
+                                </button>
                         </div>
-
-                        <button id="btnFecharRecuperar" class="btn-fechar-modal" style="background: var(--text-tertiary); margin-top: 10px;">
-                                Cancelar
-                        </button>
-                        <p id="mensagemRecuperar" style="margin-top: 15px; text-align: center; font-size: 0.9rem;"></p>
                 </div>
-        </div>
 
-        <div id="modalNovoAviso" class="modal-overlay hidden" style="display: none;">
-                <div class="modal-conteudo">
-                        <h2>📝 Novo Aviso</h2>
-                        <form id="formNovoAviso">
-                                <label>Tipo de Aviso:</label>
-                                <select id="novoTipoAviso" required>
-                                        <option value="">Selecione um tipo</option>
-                                        <option value="Quizizz">Quizizz</option>
-                                        <option value="Khan Academy">Khan Academy</option>
-                                        <option value="Redação Paraná">Redação Paraná</option>
-                                        <option value="Geral">Geral</option>
-                                        <option value="Urgente">Urgente</option>
-                                </select>
-
-                                <label>Professor:</label>
-                                <input type="text" id="novoProfessor" placeholder="Nome do professor" required minlength="3">
-
-                                <label>Título:</label>
-                                <input type="text" id="novoTitulo" placeholder="Título do aviso (mínimo 5 caracteres)" required minlength="5">
-
-                                <label>Descrição:</label>
-                                <textarea id="novoDescricao" placeholder="Descrição do aviso (mínimo 10 caracteres)" required rows="4" minlength="10"></textarea>
-
-                                <label>Data:</label>
-                                <input type="text" id="novoData" placeholder="DD/MM/AAAA" maxlength="10" required pattern="\d{2}/\d{2}/\d{4}">
-
-                                <button type="submit" class="btn-fechar-modal" style="width: 100%; margin-top: 15px;">
-                                        ✅ Criar Aviso
-                                </button>
-                        </form>
-                        <button id="btnFecharNovoAviso" class="btn-fechar-modal" style="background: var(--text-tertiary); margin-top: 10px;">
-                                Cancelar
-                        </button>
+                <div
+                        id="modalInput"
+                        class="modal-overlay hidden"
+                        style="display: none"
+                >
+                        <div class="modal-conteudo modal-input-style">
+                                <h2 id="modalInputTitulo">✏️ Entrada</h2>
+                                <form id="formModalInput">
+                                        <label id="modalInputLabel"
+                                                >Digite:</label
+                                        >
+                                        <input
+                                                type="text"
+                                                id="modalInputTexto"
+                                                placeholder="Digite aqui..."
+                                                required
+                                        />
+                                        <div class="modal-acoes">
+                                                <button
+                                                        type="button"
+                                                        id="btnCancelarInput"
+                                                        class="btn-modal-cancelar"
+                                                >
+                                                        Cancelar
+                                                </button>
+                                                <button
+                                                        type="submit"
+                                                        class="btn-modal-ok"
+                                                >
+                                                        OK
+                                                </button>
+                                        </div>
+                                </form>
+                        </div>
                 </div>
-        </div>
 
-        <div id="modalEditarAviso" class="modal-overlay hidden" style="display: none;">
-                <div class="modal-conteudo">
-                        <h2>✏️ Editar Aviso</h2>
-                        <form id="formEditarAviso">
-                                <label>Tipo de Aviso:</label>
-                                <select id="editTipoAviso" required>
-                                        <option value="Quizizz">Quizizz</option>
-                                        <option value="Khan Academy">Khan Academy</option>
-                                        <option value="Redação Paraná">Redação Paraná</option>
-                                        <option value="Geral">Geral</option>
-                                        <option value="Urgente">Urgente</option>
-                                </select>
-
-                                <label>Professor:</label>
-                                <input type="text" id="editProfessor" placeholder="Nome do professor" required minlength="3">
-
-                                <label>Título:</label>
-                                <input type="text" id="editTitulo" placeholder="Título do aviso (mínimo 5 caracteres)" required minlength="5">
-
-                                <label>Descrição:</label>
-                                <textarea id="editDescricao" placeholder="Descrição do aviso (mínimo 10 caracteres)" required rows="4" minlength="10"></textarea>
-
-                                <label>Data:</label>
-                                <input type="text" id="editData" placeholder="DD/MM/AAAA" maxlength="10" required pattern="\d{2}/\d{2}/\d{4}">
-
-                                <button type="submit" class="btn-fechar-modal" style="width: 100%; margin-top: 15px;">
-                                        💾 Salvar Alterações
-                                </button>
-                        </form>
-                        <button id="btnFecharEditarAviso" class="btn-fechar-modal" style="background: var(--text-tertiary); margin-top: 10px;">
-                                Cancelar
-                        </button>
-                </div>
-        </div>
-
-        <div id="modalInput" class="modal-overlay hidden" style="display: none;">
-                <div class="modal-conteudo modal-input-style">
-                        <h2 id="modalInputTitulo">✏️ Entrada</h2>
-                        <form id="formModalInput">
-                                <label id="modalInputLabel">Digite:</label>
-                                <input type="text" id="modalInputTexto" placeholder="Digite aqui..." required>
+                <div
+                        id="modalConfirmar"
+                        class="modal-overlay hidden"
+                        style="display: none"
+                >
+                        <div class="modal-conteudo modal-confirmar">
+                                <div class="modal-confirmar-icone">⚠️</div>
+                                <h2 id="modalConfirmarTitulo">
+                                        Confirmar ação
+                                </h2>
+                                <p
+                                        id="modalConfirmarMensagem"
+                                        class="modal-confirmar-texto"
+                                ></p>
                                 <div class="modal-acoes">
-                                        <button type="button" id="btnCancelarInput" class="btn-modal-cancelar">Cancelar</button>
-                                        <button type="submit" class="btn-modal-ok">OK</button>
+                                        <button
+                                                type="button"
+                                                id="btnCancelarConfirmar"
+                                                class="btn-modal-cancelar"
+                                        >
+                                                Cancelar
+                                        </button>
+                                        <button
+                                                type="button"
+                                                id="btnOkConfirmar"
+                                                class="btn-modal-excluir"
+                                        >
+                                                Confirmar
+                                        </button>
                                 </div>
-                        </form>
-                </div>
-        </div>
-
-        <div id="modalConfirmar" class="modal-overlay hidden" style="display: none;">
-                <div class="modal-conteudo modal-confirmar">
-                        <div class="modal-confirmar-icone">⚠️</div>
-                        <h2 id="modalConfirmarTitulo">Confirmar ação</h2>
-                        <p id="modalConfirmarMensagem" class="modal-confirmar-texto"></p>
-                        <div class="modal-acoes">
-                                <button type="button" id="btnCancelarConfirmar" class="btn-modal-cancelar">Cancelar</button>
-                                <button type="button" id="btnOkConfirmar" class="btn-modal-excluir">Confirmar</button>
                         </div>
                 </div>
-        </div>
 
-        <script src="script.js?v=2025"></script>
-</body>
+                <script src="script.js?v=2025"></script>
+        </body>
 </html>
