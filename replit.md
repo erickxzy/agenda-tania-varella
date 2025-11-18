@@ -221,6 +221,16 @@ O servidor iniciará na porta 5000 com Replit Auth habilitado.
 - Sophia Monteiro de Paula
 
 ## Última Atualização
+18 de Novembro de 2025 - Cadastro automático via Google Auth:
+- Sistema agora registra automaticamente usuários que fazem login com Google
+- Papel (aluno/direcao/admin) e série salvos no banco de dados PostgreSQL
+- Tabela `users` estendida com campos `role` e `serie`
+- Usuários autenticados pela primeira vez selecionam papel e série
+- Próximos logins carregam automaticamente papel e série do banco
+- Função `upsertUser` preserva dados existentes e faz merge inteligente
+- Endpoint `/api/auth/update-profile` permite atualização de perfil
+- Persistência completa entre sessões sem necessidade de reautenticação
+
 18 de Novembro de 2025 - Fluxo de autenticação baseado em papéis:
 - Implementado fluxo onde autenticação ocorre **APÓS** seleção de papel
 - Página inicial agora acessível sem autenticação obrigatória
