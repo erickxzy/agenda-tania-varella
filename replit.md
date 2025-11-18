@@ -109,11 +109,36 @@ node db/migrations.js  # Criar tabelas legadas
 node db/seed.js       # Popular dados iniciais
 ```
 
+## Fluxo de Autenticação
+
+O sistema agora suporta dois métodos de autenticação:
+
+### Replit Auth (Recomendado)
+Fluxo moderno baseado em papéis que ocorre **APÓS** a seleção do papel:
+1. Usuário acessa a página inicial e visualiza opções: Direção, Aluno ou Administrador
+2. Ao selecionar um papel, é redirecionado para `/api/auth/start?role=X`
+3. Sistema armazena o papel na sessão e inicia autenticação OAuth2/OIDC
+4. Após autenticação bem-sucedida, redireciona para `/?role=X`
+5. Frontend detecta o parâmetro `?role=` e busca `/api/auth/user`
+6. Painel apropriado é exibido com dados carregados
+
+**Experiência do Usuário:**
+- **Alunos**: Após autenticação, são solicitados a selecionar sua turma (1A-3C) via prompt. A turma é salva no localStorage para futuras sessões.
+- **Direção/Admin**: Redirecionados diretamente ao painel administrativo completo.
+
+**Persistência:**
+- Papel e turma salvos no localStorage
+- Sessão mantida via cookies HttpOnly/Secure
+- Estado limpo automaticamente se sessão expira (401)
+
+### Autenticação Legada (Compatibilidade)
+Sistema original com bcryptjs mantido para retrocompatibilidade.
+
 ## APIs REST
 
 ### Replit Auth (Novo Sistema)
-- `GET /api/login` - Iniciar fluxo de autenticação Replit
-- `GET /api/callback` - Callback OAuth após autenticação
+- `GET /api/auth/start?role=X` - Iniciar fluxo de autenticação com papel selecionado (aluno, direcao, admin)
+- `GET /api/callback` - Callback OAuth após autenticação (redireciona baseado no papel)
 - `GET /api/logout` - Encerrar sessão
 - `GET /api/auth/user` - Obter usuário autenticado (protegido)
 
@@ -196,14 +221,24 @@ O servidor iniciará na porta 5000 com Replit Auth habilitado.
 - Sophia Monteiro de Paula
 
 ## Última Atualização
+18 de Novembro de 2025 - Fluxo de autenticação baseado em papéis:
+- Implementado fluxo onde autenticação ocorre **APÓS** seleção de papel
+- Página inicial agora acessível sem autenticação obrigatória
+- Endpoint `/api/auth/start?role=` armazena papel na sessão antes do OAuth
+- Callback redireciona para painel apropriado baseado no papel selecionado
+- Frontend detecta retorno da autenticação via parâmetro `?role=` na URL
+- Adaptação de objeto de usuário Replit Auth (firstName/lastName) para formato legado
+- Inicialização completa de painéis com dados (eventos, cardápio, notificações)
+- Sistema de seleção de turma para alunos via prompt com persistência em localStorage
+- Limpeza automática de estado obsoleto quando sessão expira
+- DOM-ready safety checks para evitar erros de referência nula
+
 17 de Novembro de 2025 - Integração com Replit Auth:
 - Adicionado Replit Auth usando OpenID Connect
 - Criado sistema de autenticação moderno com suporte a múltiplos provedores
 - Implementado Drizzle ORM para gerenciamento de schema
 - Migrado para TypeScript com runtime TSX
 - Criadas tabelas `users` e `sessions` para Replit Auth
-- Interface de login/logout em `frontend/auth.html`
-- Roteamento dinâmico baseado em status de autenticação
 - Sistema legado de autenticação mantido para compatibilidade
 
 17 de Novembro de 2025 - Migração para PostgreSQL:
