@@ -26,12 +26,9 @@ async function startServer() {
     }
   });
 
+  // Página inicial - sempre mostra seleção de papel (sem autenticação)
   app.get('/', (req, res) => {
-    if (req.isAuthenticated()) {
-      res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
-    } else {
-      res.sendFile(path.join(__dirname, 'frontend', 'auth.html'));
-    }
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
   });
 
   app.use(express.static(path.join(__dirname, 'frontend')));

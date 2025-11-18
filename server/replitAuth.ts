@@ -105,6 +105,27 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
+  // Endpoint para iniciar autenticação com papel selecionado
+  app.get("/api/auth/start", (req, res, next) => {
+    const role = req.query.role as string;
+    const allowedRoles = ['aluno', 'direcao', 'admin'];
+    
+    if (!role || !allowedRoles.includes(role.toLowerCase())) {
+      return res.status(400).json({ error: 'Papel inválido. Escolha: aluno, direcao ou admin' });
+    }
+    
+    // Armazena o papel selecionado na sessão
+    (req.session as any).selectedRole = role.toLowerCase();
+    (req.session as any).returnTo = `/?role=${role.toLowerCase()}`;
+    
+    ensureStrategy(req.hostname);
+    passport.authenticate(`replitauth:${req.hostname}`, {
+      prompt: "login consent",
+      scope: ["openid", "email", "profile", "offline_access"],
+    })(req, res, next);
+  });
+
+  // Endpoint legado de login (sem papel)
   app.get("/api/login", (req, res, next) => {
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
@@ -116,9 +137,27 @@ export async function setupAuth(app: Express) {
   app.get("/api/callback", (req, res, next) => {
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
-    })(req, res, next);
+      failureRedirect: "/",
+    })(req, res, (err) => {
+      if (err) {
+        return next(err);
+      }
+      
+      // Recupera o papel armazenado na sessão
+      const selectedRole = (req.session as any).selectedRole;
+      const returnTo = (req.session as any).returnTo;
+      
+      // Limpa o papel da sessão
+      delete (req.session as any).selectedRole;
+      delete (req.session as any).returnTo;
+      
+      // Redireciona baseado no papel
+      if (selectedRole) {
+        res.redirect(returnTo || `/?role=${selectedRole}`);
+      } else {
+        res.redirect('/');
+      }
+    });
   });
 
   app.get("/api/logout", (req, res) => {
