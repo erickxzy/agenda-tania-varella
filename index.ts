@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { setupAuth, isAuthenticated } from './server/replitAuth';
 import { storage } from './server/storage';
+import legacyRoutes from './server/legacyRoutes';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +15,9 @@ app.use(express.json());
 
 async function startServer() {
   await setupAuth(app);
+  
+  // Montar rotas legadas de autenticação manual (bcrypt)
+  app.use('/api', legacyRoutes);
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
