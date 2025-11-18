@@ -28,6 +28,128 @@ themeToggle.addEventListener("click", toggleTheme);
 
 loadTheme();
 
+// Variáveis globais de autenticação
+let modoCadastro = false;
+let usuarioAtual = null;
+let tipoUsuario = null;
+
+// Função para verificar autenticação via Replit Auth
+async function checkReplitAuth() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const roleFromUrl = urlParams.get('role');
+        
+        // Se há um parâmetro role na URL, o usuário acabou de retornar da autenticação
+        if (roleFromUrl) {
+                try {
+                        const response = await fetch('/api/auth/user');
+                        if (response.ok) {
+                                const user = await response.json();
+                                // Usuário está autenticado, mostrar painel apropriado
+                                await showPanelForRole(roleFromUrl, user);
+                                // Limpar parâmetro da URL
+                                window.history.replaceState({}, document.title, window.location.pathname);
+                                return true;
+                        } else if (response.status === 401) {
+                                // Não autenticado, limpar estado e mostrar seleção
+                                clearAuthState();
+                        }
+                } catch (error) {
+                        console.error('Erro ao verificar autenticação:', error);
+                        clearAuthState();
+                }
+        }
+        
+        // Verificar se já está autenticado (sem parâmetro na URL)
+        try {
+                const response = await fetch('/api/auth/user');
+                if (response.ok) {
+                        const user = await response.json();
+                        // Verificar se há uma role salva no localStorage
+                        const savedRole = localStorage.getItem('userRole');
+                        if (savedRole) {
+                                await showPanelForRole(savedRole, user);
+                                return true;
+                        }
+                } else if (response.status === 401) {
+                        // Não autenticado, limpar dados obsoletos
+                        clearAuthState();
+                }
+        } catch (error) {
+                // Não autenticado, limpar dados obsoletos
+                clearAuthState();
+        }
+        
+        return false;
+}
+
+// Função para limpar estado de autenticação
+function clearAuthState() {
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userSerie');
+}
+
+// Função para exibir o painel correto baseado no papel
+                                                                                                                                                                                                                                                                                                                async function showPanelForRole(role, user) {
+        // Salvar role no localStorage
+        localStorage.setItem('userRole', role);
+        
+        // Configurar usuário atual global
+        tipoUsuario = role;
+        
+        // Construir nome do usuário a partir dos dados do Replit Auth
+        const nomeCompleto = user.firstName && user.lastName 
+                ? `${user.firstName} ${user.lastName}`
+                : user.name || user.username || 'Usuário';
+        
+        // Mostrar painel apropriado usando as funções existentes
+        if (role === 'aluno') {
+                // Para alunos, precisamos da série
+                // Por enquanto, vamos pedir que selecionem a série se não tiver salvo
+                let serie = localStorage.getItem('userSerie');
+                if (!serie) {
+                        // Mostrar seletor de série
+                        const serieOptions = ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '3A', '3B', '3C'];
+                        serie = prompt(`Bem-vindo, ${nomeCompleto}!\n\nPor favor, selecione sua turma:\n${serieOptions.join(', ')}`)?.toUpperCase();
+                        if (serie && serieOptions.includes(serie)) {
+                                localStorage.setItem('userSerie', serie);
+                        } else {
+                                showToast('Turma inválida. Por favor, tente novamente.', 'error');
+                                localStorage.removeItem('userRole');
+                                window.location.reload();
+                                return;
+                        }
+                }
+                
+                // Adaptar objeto do usuário Replit Auth para formato esperado
+                const alunoAdaptado = {
+                        nome: nomeCompleto,
+                        email: user.email || user.username || 'sem-email',
+                        serie: serie
+                };
+                
+                usuarioAtual = alunoAdaptado;
+                await mostrarPainelAluno(alunoAdaptado);
+                
+        } else if (role === 'direcao' || role === 'admin') {
+                // Para direção e admin, adaptar objeto do usuário
+                const usuarioAdaptado = {
+                        nome: nomeCompleto,
+                        email: user.email || user.username || 'sem-email'
+                };
+                
+                usuarioAtual = usuarioAdaptado;
+                mostrarPainelAdmin();
+        }
+}
+
+// Verificar autenticação ao carregar a página (após DOM estar pronto)
+if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkReplitAuth);
+} else {
+        // DOM já está pronto
+        checkReplitAuth();
+}
+
 function showToast(message, type = "info", title = "") {
         const container = document.getElementById("toast-container");
 
@@ -297,10 +419,6 @@ const btnDirecao = document.getElementById("btnDirecao");
 const btnAluno = document.getElementById("btnAluno");
 const adminSecreto = document.getElementById("adminSecreto");
 const btnVoltar = document.getElementById("btnVoltar");
-
-let modoCadastro = false;
-let usuarioAtual = null;
-let tipoUsuario = null;
 
 btnDirecao.addEventListener("click", () => {
         // Redireciona para autenticação Replit com papel de direção
