@@ -165,24 +165,35 @@ export async function setupAuth(app: Express) {
         try {
           const userId = (req.user as any).claims?.sub;
           if (userId) {
+            // IMPORTANTE: Aguardar a operação de salvar completar antes de redirecionar
             await upsertUser(
               (req.user as any).claims,
               selectedRole,
               selectedSerie
             );
+            console.log(`✅ Role '${selectedRole}' saved for user ${userId}`);
           }
         } catch (error) {
-          console.error("Error saving role to database:", error);
+          console.error("❌ Error saving role to database:", error);
         }
       }
       
-      // Limpa o papel da sessão
+      // Salvar sessão antes de redirecionar (garantir persistência)
+      await new Promise<void>((resolve) => {
+        (req.session as any).save((err: any) => {
+          if (err) console.error("Session save error:", err);
+          resolve();
+        });
+      });
+      
+      // Limpa o papel temporário da sessão
       delete (req.session as any).selectedRole;
       delete (req.session as any).selectedSerie;
       delete (req.session as any).returnTo;
       
       // Redireciona baseado no papel
       if (selectedRole) {
+        console.log(`🔄 Redirecting to /?role=${selectedRole}`);
         res.redirect(returnTo || `/?role=${selectedRole}`);
       } else {
         res.redirect('/');

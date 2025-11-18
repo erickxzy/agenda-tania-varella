@@ -38,23 +38,30 @@ async function checkReplitAuth() {
         const urlParams = new URLSearchParams(window.location.search);
         const roleFromUrl = urlParams.get('role');
         
+        console.log('🔍 checkReplitAuth executado. roleFromUrl:', roleFromUrl);
+        
         // Se há um parâmetro role na URL, o usuário acabou de retornar da autenticação
         if (roleFromUrl) {
+                console.log('✅ Detectado role na URL:', roleFromUrl);
                 try {
                         const response = await fetch('/api/auth/user');
+                        console.log('📡 Resposta de /api/auth/user:', response.status);
                         if (response.ok) {
                                 const user = await response.json();
+                                console.log('👤 Usuário recebido:', user);
+                                console.log('📋 Role do usuário:', user.role);
                                 // Usuário está autenticado, mostrar painel apropriado
                                 await showPanelForRole(roleFromUrl, user, true);
                                 // Limpar parâmetro da URL
                                 window.history.replaceState({}, document.title, window.location.pathname);
                                 return true;
                         } else if (response.status === 401) {
+                                console.log('❌ Não autenticado (401)');
                                 // Não autenticado, limpar estado e mostrar seleção
                                 clearAuthState();
                         }
                 } catch (error) {
-                        console.error('Erro ao verificar autenticação:', error);
+                        console.error('❌ Erro ao verificar autenticação:', error);
                         clearAuthState();
                 }
         }

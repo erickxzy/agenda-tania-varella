@@ -221,6 +221,13 @@ O servidor iniciará na porta 5000 com Replit Auth habilitado.
 - Sophia Monteiro de Paula
 
 ## Última Atualização
+18 de Novembro de 2025 - Correção de redirecionamento pós-autenticação:
+- Ajustado callback OAuth para garantir persist\u00eancia da sessão antes de redirecionar
+- Adicionados logs de debug no callback (console do servidor)
+- Adicionados logs de debug no frontend (console do navegador)
+- Garantido que o role seja salvo no banco ANTES do redirect
+- Melhorado tratamento de timing entre salvar no banco e redirecionar
+
 18 de Novembro de 2025 - Interface de cadastro com Google Auth:
 - Adicionada interface clara para cadastro usando Google/GitHub/Email
 - Caixa de destaque explicando "Cadastro e Login com Google"
