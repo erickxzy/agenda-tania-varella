@@ -95,6 +95,12 @@ function clearAuthState() {
 
 // Função para exibir o painel correto baseado no papel
 async function showPanelForRole(role, user, shouldSave = false) {
+        // ESCONDER tela de seleção de perfil e login
+        const selecaoBox = document.getElementById('selecaoBox');
+        const loginBox = document.getElementById('loginBox');
+        if (selecaoBox) selecaoBox.classList.add('hidden');
+        if (loginBox) loginBox.classList.add('hidden');
+        
         // Salvar role no localStorage
         localStorage.setItem('userRole', role);
         

@@ -221,6 +221,13 @@ O servidor iniciará na porta 5000 com Replit Auth habilitado.
 - Sophia Monteiro de Paula
 
 ## Última Atualização
+18 de Novembro de 2025 - Correção do redirecionamento pós-autenticação:
+- Após login bem-sucedido, usuários são direcionados DIRETAMENTE para o painel apropriado
+- Tela de seleção de perfil agora é escondida automaticamente após autenticação
+- Função `showPanelForRole()` agora esconde #selecaoBox e #loginBox antes de exibir painel
+- Experiência do usuário melhorada: sem "flash" da tela de seleção após login
+- Fluxo OAuth completo e suave para todos os papéis (Aluno, Direção, Admin)
+
 18 de Novembro de 2025 - Cadastro automático via Google Auth:
 - Sistema agora registra automaticamente usuários que fazem login com Google
 - Papel (aluno/direcao/admin) e série salvos no banco de dados PostgreSQL
