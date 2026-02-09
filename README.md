@@ -122,4 +122,4 @@ O sistema possui tema claro e escuro que pode ser alternado pelo botão no canto
 - Erick Gustavo Dos Santos Gomes
 - Adryan Kaick da Silva Cassula
 - Victor Hugo Nunes da Costa
-- Sophia Monteiro de Paula
+- Yasmin Victoria Gomes de Souza

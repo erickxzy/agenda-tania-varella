@@ -140,7 +140,7 @@ O servidor iniciará na porta 5000 e criará/populará o banco de dados automati
 - Erick Gustavo Dos Santos Gomes
 - Adryan Kaick da Silva Cassula
 - Victor Hugo Nunes da Costa
-- Sophia Monteiro de Paula
+- Yasmin Victoria Gomes de Souza
 
 ## Última Atualização
 01 de Novembro de 2025 - Correções no painel administrativo:
