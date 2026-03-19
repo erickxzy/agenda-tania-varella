@@ -62,6 +62,10 @@
                                 <option value="3C">3º Ano - Turma C</option>
                         </select>
                         <button type="submit" id="botaoLogin">Entrar</button>
+                        <div id="separadorGoogle" style="display:none; text-align:center; margin: 10px 0; color: var(--text-tertiary); font-size: 0.9rem;">— ou —</div>
+                        <button type="button" id="btnLoginGoogle" style="display:none; width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:1rem; cursor:pointer; display:none; align-items:center; justify-content:center; gap:10px; font-weight:600;">
+                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px; height:20px;" alt="Google"> Entrar com Google
+                        </button>
                         <p class="alternar">
                                 Não tem conta? <a href="#" id="mostrarCadastro">Cadastrar</a>
                         </p>
@@ -339,6 +343,32 @@
                 </div>
         </div>
 
-        <script src="script.js?v=2025"></script>
+        <div id="modalSelecionarTurma" class="modal-overlay hidden" style="display: none;">
+                <div class="modal-conteudo">
+                        <h2>🎓 Bem-vindo!</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
+                                Para completar seu cadastro, selecione sua turma:
+                        </p>
+                        <select id="turmaGoogleSelect" style="width:100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-primary); font-size: 1rem; margin-bottom: 15px;">
+                                <option value="">Selecione a turma</option>
+                                <option value="1A">1º Ano - Turma A</option>
+                                <option value="1B">1º Ano - Turma B</option>
+                                <option value="1C">1º Ano - Turma C</option>
+                                <option value="1D">1º Ano - Turma D</option>
+                                <option value="2A">2º Ano - Turma A</option>
+                                <option value="2B">2º Ano - Turma B</option>
+                                <option value="2C">2º Ano - Turma C</option>
+                                <option value="3A">3º Ano - Turma A</option>
+                                <option value="3B">3º Ano - Turma B</option>
+                                <option value="3C">3º Ano - Turma C</option>
+                        </select>
+                        <button id="btnConfirmarTurmaGoogle" class="btn-fechar-modal" style="width: 100%;">
+                                ✅ Confirmar e Entrar
+                        </button>
+                </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+        <script src="script.js?v=2026"></script>
 </body>
 </html>

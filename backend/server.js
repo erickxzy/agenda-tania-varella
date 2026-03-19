@@ -31,6 +31,64 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // recuperacao_senha → recuperacao_senha
 // logs_login     → Logs
 
+// ─── CONFIG PÚBLICA ──────────────────────────────────────────────────────────
+app.get('/api/config', (req, res) => {
+        res.json({
+                supabaseUrl: SUPABASE_URL,
+                supabaseAnonKey: SUPABASE_ANON_KEY
+        });
+});
+
+// ─── LOGIN GOOGLE ─────────────────────────────────────────────────────────────
+app.post('/api/login-google', async (req, res) => {
+        const { email, nome } = req.body;
+
+        if (!email || !nome) {
+                return res.status(400).json({ sucesso: false, erro: 'Dados incompletos.' });
+        }
+
+        if (!email.endsWith('@escola.pr.gov.br')) {
+                return res.status(403).json({ sucesso: false, erro: 'Apenas e-mails @escola.pr.gov.br são permitidos.' });
+        }
+
+        const { data: alunoExistente } = await supabase
+                .from('Cadastro_Aluno')
+                .select('*')
+                .eq('email', email)
+                .single();
+
+        if (alunoExistente) {
+                return res.json({ sucesso: true, usuario: { id: alunoExistente.id, nome: alunoExistente.nome, email: alunoExistente.email, serie: alunoExistente.serie }, novo: false });
+        }
+
+        return res.json({ sucesso: true, usuario: { nome, email, serie: null }, novo: true });
+});
+
+app.post('/api/login-google/turma', async (req, res) => {
+        const { email, nome, serie } = req.body;
+
+        if (!email || !nome || !serie) {
+                return res.status(400).json({ sucesso: false, erro: 'Dados incompletos.' });
+        }
+
+        const turmasValidas = ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '3A', '3B', '3C'];
+        if (!turmasValidas.includes(serie)) {
+                return res.status(400).json({ sucesso: false, erro: 'Turma inválida.' });
+        }
+
+        const { data: criado, error } = await supabase
+                .from('Cadastro_Aluno')
+                .insert({ nome, email, senha: null, serie, ativo: true })
+                .select()
+                .single();
+
+        if (error) {
+                return res.status(500).json({ sucesso: false, erro: 'Erro ao cadastrar usuário Google.' });
+        }
+
+        res.json({ sucesso: true, usuario: { id: criado.id, nome: criado.nome, email: criado.email, serie: criado.serie } });
+});
+
 // ─── CADASTRO ALUNO ──────────────────────────────────────────────────────────
 app.post('/api/cadastrar', async (req, res) => {
         const { nome, email, senha, serie } = req.body;

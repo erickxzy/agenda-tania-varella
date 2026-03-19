@@ -1,3 +1,106 @@
+// ─── SUPABASE + GOOGLE OAUTH ──────────────────────────────────────────────────
+let supabaseClient = null;
+
+async function initSupabase() {
+  try {
+    const res = await fetch('/api/config');
+    const config = await res.json();
+    supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+    await handleOAuthCallback();
+  } catch (e) {
+    console.error('Erro ao inicializar Supabase:', e);
+  }
+}
+
+async function handleOAuthCallback() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) return;
+
+  const googleEmail = session.user.email;
+  const googleNome = session.user.user_metadata?.full_name || session.user.user_metadata?.name || googleEmail.split('@')[0];
+
+  await supabaseClient.auth.signOut();
+
+  if (!googleEmail.endsWith('@escola.pr.gov.br')) {
+    showToast('Apenas e-mails @escola.pr.gov.br são permitidos!', 'error', 'Acesso Negado');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/login-google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: googleEmail, nome: googleNome })
+    });
+    const data = await res.json();
+
+    if (!data.sucesso) {
+      showToast(data.erro, 'error');
+      return;
+    }
+
+    if (data.novo) {
+      mostrarModalSelecionarTurma(data.usuario);
+    } else {
+      usuarioAtual = data.usuario;
+      mostrarPainelAluno(data.usuario);
+      showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Login Realizado');
+    }
+  } catch (e) {
+    showToast('Erro ao processar login com Google.', 'error');
+  }
+}
+
+function mostrarModalSelecionarTurma(usuario) {
+  const modal = document.getElementById('modalSelecionarTurma');
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+
+  document.getElementById('btnConfirmarTurmaGoogle').onclick = async () => {
+    const serie = document.getElementById('turmaGoogleSelect').value;
+    if (!serie) {
+      showToast('Selecione uma turma!', 'warning');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/login-google/turma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: usuario.email, nome: usuario.nome, serie })
+      });
+      const data = await res.json();
+
+      if (data.sucesso) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        usuarioAtual = data.usuario;
+        mostrarPainelAluno(data.usuario);
+        showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Cadastro Realizado');
+      } else {
+        showToast(data.erro, 'error');
+      }
+    } catch (e) {
+      showToast('Erro ao salvar turma.', 'error');
+    }
+  };
+}
+
+async function loginComGoogle() {
+  if (!supabaseClient) {
+    showToast('Serviço não disponível, tente novamente.', 'error');
+    return;
+  }
+  const redirectTo = window.location.origin + window.location.pathname;
+  await supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo }
+  });
+}
+
+initSupabase();
+
+// ─── TEMA ─────────────────────────────────────────────────────────────────────
 const themeToggle = document.getElementById('theme-toggle');
 const themeIcon = document.querySelector('.theme-icon');
 
@@ -319,6 +422,11 @@ btnVoltar.addEventListener("click", () => {
   tipoUsuario = null;
 });
 
+const btnLoginGoogle = document.getElementById('btnLoginGoogle');
+const separadorGoogle = document.getElementById('separadorGoogle');
+
+btnLoginGoogle.addEventListener('click', loginComGoogle);
+
 function mostrarTelaLogin() {
   selecaoBox.classList.add("hidden");
   loginBox.classList.remove("hidden");
@@ -334,6 +442,8 @@ function mostrarTelaLogin() {
     nomeInput.style.display = "block";
     botaoLogin.textContent = "Cadastrar";
     esqueceuSenhaContainer.style.display = "none";
+    separadorGoogle.style.display = "block";
+    btnLoginGoogle.style.display = "flex";
   } else if (tipoUsuario === "direcao") {
     modoCadastro = true;
     formTitulo.textContent = "Cadastro da Direção";
@@ -345,6 +455,8 @@ function mostrarTelaLogin() {
     nomeInput.style.display = "block";
     botaoLogin.textContent = "Cadastrar";
     esqueceuSenhaContainer.style.display = "none";
+    separadorGoogle.style.display = "none";
+    btnLoginGoogle.style.display = "none";
   } else if (tipoUsuario === "admin") {
     modoCadastro = false;
     formTitulo.textContent = "Login do Administrador";
@@ -355,6 +467,8 @@ function mostrarTelaLogin() {
     nomeInput.style.display = "none";
     botaoLogin.textContent = "Entrar";
     esqueceuSenhaContainer.style.display = "none";
+    separadorGoogle.style.display = "none";
+    btnLoginGoogle.style.display = "none";
   }
 }
 
@@ -373,6 +487,7 @@ mostrarCadastro.addEventListener("click", e => {
     nomeInput.style.display = "block";
     serieSelect.style.display = tipoUsuario === "aluno" ? "block" : "none";
     esqueceuSenhaContainer.style.display = "none";
+    if (tipoUsuario === "aluno") { separadorGoogle.style.display = "block"; btnLoginGoogle.style.display = "flex"; }
   } else {
     if (tipoUsuario === "aluno") {
       formTitulo.textContent = "Login do Aluno";
@@ -383,7 +498,8 @@ mostrarCadastro.addEventListener("click", e => {
     mostrarCadastro.textContent = "Não tem conta? Cadastrar";
     nomeInput.style.display = "none";
     serieSelect.style.display = "none";
-    esqueceuSenhaContainer.style.display = "block";
+    esqueceuSenhaContainer.style.display = tipoUsuario === "aluno" ? "block" : "none";
+    if (tipoUsuario === "aluno") { separadorGoogle.style.display = "block"; btnLoginGoogle.style.display = "flex"; }
   }
 });
 
