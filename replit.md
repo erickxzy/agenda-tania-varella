@@ -1,11 +1,9 @@
 # Agenda Escolar Tânia Varella Ferreira
 
 ## Visão Geral
-Sistema de agenda escolar desenvolvido em Node.js com Express e SQLite. Permite gerenciamento de eventos, cardápios, avisos e atividades para alunos e administração escolar.
+Sistema de agenda escolar desenvolvido em Node.js com Express e Supabase. Permite gerenciamento de eventos, cardápios, avisos e atividades para alunos e administração escolar.
 
 ## Estrutura do Projeto
-
-O projeto está organizado com separação clara entre backend e frontend:
 
 ```
 projeto/
@@ -17,17 +15,32 @@ projeto/
 │   ├── index.html       # Página principal
 │   ├── script.js        # Lógica do cliente
 │   └── style.css        # Estilos da aplicação
-├── backups/             # Backups automáticos do banco
-├── escola.db            # Banco de dados SQLite
-└── README.md            # Documentação completa
 ```
 
 ## Tecnologias
 - Node.js 20
-- Express 5.1.0
-- SQLite (better-sqlite3)
+- Express 5.x
+- Supabase (banco de dados PostgreSQL na nuvem)
 - bcryptjs (autenticação)
 - Frontend: HTML/CSS/JavaScript vanilla
+
+## Variáveis de Ambiente
+- `SUPABASE_URL` - URL do projeto Supabase
+- `SUPABASE_ANON_KEY` - Chave pública do Supabase
+
+## Tabelas no Supabase
+
+| Tabela Supabase   | Função                              |
+|-------------------|-------------------------------------|
+| `Cadastro_Aluno`  | Alunos cadastrados                  |
+| `Login_Direção`   | Membros da direção                  |
+| `Conteudos`       | Eventos escolares por série         |
+| `Cardapio`        | Cardápio semanal                    |
+| `Professores`     | Professores gerais                  |
+| `Presenças`       | Professores por turma com presença  |
+| `Avisos`          | Avisos e atividades                 |
+| `recuperacao_senha` | Recuperação de senha              |
+| `Logs`            | Logs de login dos alunos            |
 
 ## Funcionalidades
 
@@ -47,47 +60,31 @@ projeto/
 - Gerenciamento de avisos e atividades
 - Visualização e exclusão de alunos cadastrados
 
-## Turmas e Professores
-O sistema gerencia 10 turmas com 127 professores distribuídos:
-- **1º Ano**: Turmas A, B, C, D (51 professores)
-- **2º Ano**: Turmas A, B, C (37 professores)
-- **3º Ano**: Turmas A, B, C (39 professores)
-
-### Gestão de Professores
-- Registro de presença/falta por turma
-- Data de registro automática
-- Interface com tabela interativa
-- Atualização em tempo real
-
-## Banco de Dados
-
-### Tabelas Principais
-- `alunos` - Dados dos alunos
-- `direcao` - Membros da direção
-- `eventos` - Eventos escolares por série
-- `cardapio` - Cardápio semanal
-- `professores` - Professores gerais (legado)
-- `professores_turma` - Professores por turma com status de presença
-- `avisos` - Avisos e atividades
-- `recuperacao_senha` - Sistema de recuperação de senha
+## Turmas
+1A, 1B, 1C, 1D, 2A, 2B, 2C, 3A, 3B, 3C
 
 ## APIs REST
 
-### Alunos e Autenticação
+### Autenticação
 - `POST /api/cadastrar` - Cadastro de aluno
 - `POST /api/login` - Login de aluno
 - `POST /api/cadastrar-direcao` - Cadastro direção
 - `POST /api/login-direcao` - Login direção
-- `POST /api/recuperar-senha` - Solicitar código
+- `POST /api/recuperar-senha` - Solicitar código de recuperação
 - `POST /api/resetar-senha` - Redefinir senha
+
+### Alunos
 - `GET /api/alunos` - Listar alunos
 - `DELETE /api/alunos/:id` - Excluir aluno
 
-### Eventos e Cardápio
+### Eventos
 - `GET /api/eventos/:serie` - Eventos por série
+- `GET /api/eventos` - Todos os eventos
 - `POST /api/eventos` - Criar evento
 - `PUT /api/eventos/:id` - Atualizar evento
 - `DELETE /api/eventos/:id` - Deletar evento
+
+### Cardápio
 - `GET /api/cardapio/:dia` - Cardápio do dia
 - `PUT /api/cardapio/:dia` - Atualizar cardápio
 
@@ -97,7 +94,7 @@ O sistema gerencia 10 turmas com 127 professores distribuídos:
 - `GET /api/turmas` - Listar turmas
 - `GET /api/professores-turma` - Todos os professores por turma
 - `GET /api/professores-turma/:turma` - Professores de uma turma
-- `PUT /api/professores-turma/:id` - Atualizar status do professor
+- `PUT /api/professores-turma/:id` - Atualizar presença do professor
 
 ### Avisos
 - `GET /api/avisos` - Listar avisos
@@ -105,45 +102,18 @@ O sistema gerencia 10 turmas com 127 professores distribuídos:
 - `PUT /api/avisos/:id` - Atualizar aviso
 - `DELETE /api/avisos/:id` - Deletar aviso
 
-## Executar o Projeto
-O workflow "webserver" está configurado para rodar automaticamente:
-```bash
-node server.js
-```
-
-O servidor iniciará na porta 5000 e criará/populará o banco de dados automaticamente.
-
-## Estrutura de Arquivos
-```
-.
-├── server.js               # Servidor Express + APIs
-├── escola.db               # Banco SQLite
-├── package.json            # Dependências
-├── package-lock.json
-├── .gitignore
-├── replit.md              # Documentação
-└── public/                # Frontend
-    ├── index.html         # Interface
-    ├── script.js          # JavaScript
-    ├── style.css          # Estilos
-    └── *.png              # Imagens
-```
+### Outros
+- `GET /api/logs` - Logs de acesso
+- `GET /api/estatisticas` - Estatísticas gerais
 
 ## Segurança
 - Senhas criptografadas com bcryptjs
-- Validação de e-mails (@escola.pr.gov.br)
+- Validação de e-mails (@escola.pr.gov.br para alunos)
 - Sistema de recuperação de senha com código de 6 dígitos
 - Códigos expiram em 30 minutos
-- Prepared statements no SQLite (proteção SQL injection)
 
 ## Criadores
 - Erick Gustavo Dos Santos Gomes
 - Adryan Kaick da Silva Cassula
 - Victor Hugo Nunes da Costa
 - Yasmin Victoria Gomes de Souza
-
-## Última Atualização
-01 de Novembro de 2025 - Correções no painel administrativo:
-- Eventos agora exibidos por turma específica (1A-1D, 2A-2C, 3A-3C) ao invés de séries genéricas
-- Corrigido status de professores: agora usa "Falta" ao invés de "Ausente" para compatibilidade com o banco de dados
-- Sistema de presença/falta de professores funcionando corretamente

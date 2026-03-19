@@ -52,3 +52,9 @@ expertMode = true
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+SUPABASE_URL = "https://hcpimvggtpakenzjcewe.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcGltdmdndHBha2VuempjZXdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1OTg3NzQsImV4cCI6MjA4NzE3NDc3NH0.FxhzTdourTXWr9YTmi4SaxjmNSUBgIK_I79ANExNDgs"
