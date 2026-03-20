@@ -250,11 +250,24 @@ app.post('/api/cadastrar-direcao', async (req, res) => {
                 return res.status(400).json({ sucesso: false, erro: 'Preencha todos os campos!' });
         }
 
-        const { data: existe } = await supabase
+        if (!email.includes('@')) {
+                return res.status(400).json({ sucesso: false, erro: 'E-mail inválido.' });
+        }
+
+        if (senha.length < 6) {
+                return res.status(400).json({ sucesso: false, erro: 'A senha deve ter pelo menos 6 caracteres.' });
+        }
+
+        const { data: existe, error: erroBusca } = await supabase
                 .from('Login_Direção')
                 .select('id')
                 .eq('email', email)
                 .single();
+
+        if (erroBusca && erroBusca.code !== 'PGRST116') {
+                console.error('Erro ao verificar e-mail direção:', erroBusca.message);
+                return res.status(500).json({ sucesso: false, erro: 'Erro ao verificar e-mail. Tente novamente.' });
+        }
 
         if (existe) {
                 return res.status(400).json({ sucesso: false, erro: 'Este e-mail já está cadastrado!' });
@@ -267,7 +280,11 @@ app.post('/api/cadastrar-direcao', async (req, res) => {
                 .insert({ nome, email, senha: senhaHash });
 
         if (error) {
-                return res.status(500).json({ sucesso: false, erro: 'Erro ao cadastrar.' });
+                console.error('Erro ao inserir direção:', error.message);
+                if (error.code === '23505') {
+                        return res.status(400).json({ sucesso: false, erro: 'Este e-mail já está cadastrado!' });
+                }
+                return res.status(500).json({ sucesso: false, erro: `Erro ao cadastrar: ${error.message}` });
         }
 
         res.json({ sucesso: true, mensagem: 'Membro da direção cadastrado com sucesso! Agora faça login.' });
