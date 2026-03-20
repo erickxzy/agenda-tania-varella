@@ -242,7 +242,94 @@ app.post('/api/cadastrar', async (req, res) => {
         res.json({ sucesso: true, mensagem: 'Aluno cadastrado com sucesso! Agora faça login.' });
 });
 
-// ─── CADASTRO DIREÇÃO ─────────────────────────────────────────────────────────
+// ─── INICIAR CADASTRO DIREÇÃO (envia código) ──────────────────────────────────
+app.post('/api/iniciar-cadastro-direcao', async (req, res) => {
+        const { nome, email, senha } = req.body;
+
+        if (!nome || !email || !senha) {
+                return res.status(400).json({ sucesso: false, erro: 'Preencha todos os campos!' });
+        }
+
+        if (!email.includes('@')) {
+                return res.status(400).json({ sucesso: false, erro: 'E-mail inválido.' });
+        }
+
+        if (senha.length < 6) {
+                return res.status(400).json({ sucesso: false, erro: 'A senha deve ter pelo menos 6 caracteres.' });
+        }
+
+        if (!process.env.EMAIL_REMETENTE || !process.env.EMAIL_SENHA_APP) {
+                return res.status(500).json({ sucesso: false, erro: 'Serviço de e-mail não configurado. Contate o administrador.' });
+        }
+
+        const { data: existe, error: erroBusca } = await supabase
+                .from('Login_Direção')
+                .select('id')
+                .eq('E-mail', email)
+                .single();
+
+        if (erroBusca && erroBusca.code !== 'PGRST116') {
+                return res.status(500).json({ sucesso: false, erro: 'Erro ao verificar e-mail. Tente novamente.' });
+        }
+
+        if (existe) {
+                return res.status(400).json({ sucesso: false, erro: 'Este e-mail já está cadastrado!' });
+        }
+
+        const codigo = String(Math.floor(100000 + Math.random() * 900000));
+        const senhaHash = bcrypt.hashSync(senha, 10);
+        const expiracao = Date.now() + 15 * 60 * 1000;
+
+        pendentesVerificacao.set('direcao_' + email, { nome, senhaHash, codigo, expiracao, tipo: 'direcao' });
+
+        try {
+                await enviarCodigoEmail(email, codigo, nome);
+                res.json({ sucesso: true, mensagem: 'Código enviado para seu e-mail!' });
+        } catch (err) {
+                console.error('Erro ao enviar e-mail direção:', err.message);
+                pendentesVerificacao.delete('direcao_' + email);
+                res.status(500).json({ sucesso: false, erro: 'Erro ao enviar e-mail. Verifique se o endereço está correto.' });
+        }
+});
+
+// ─── VERIFICAR CÓDIGO E CONCLUIR CADASTRO DIREÇÃO ────────────────────────────
+app.post('/api/verificar-codigo-direcao', async (req, res) => {
+        const { email, codigo } = req.body;
+
+        if (!email || !codigo) {
+                return res.status(400).json({ sucesso: false, erro: 'Dados incompletos.' });
+        }
+
+        const pendente = pendentesVerificacao.get('direcao_' + email);
+
+        if (!pendente) {
+                return res.status(400).json({ sucesso: false, erro: 'Nenhum cadastro pendente para este e-mail. Tente novamente.' });
+        }
+
+        if (Date.now() > pendente.expiracao) {
+                pendentesVerificacao.delete('direcao_' + email);
+                return res.status(400).json({ sucesso: false, erro: 'Código expirado. Solicite um novo cadastro.' });
+        }
+
+        if (pendente.codigo !== String(codigo).trim()) {
+                return res.status(400).json({ sucesso: false, erro: 'Código incorreto. Verifique e tente novamente.' });
+        }
+
+        const { error } = await supabase
+                .from('Login_Direção')
+                .insert({ 'E-mail': email, 'Senha': pendente.senhaHash });
+
+        pendentesVerificacao.delete('direcao_' + email);
+
+        if (error) {
+                console.error('Erro ao inserir direção:', error.message);
+                return res.status(500).json({ sucesso: false, erro: `Erro ao cadastrar: ${error.message}` });
+        }
+
+        res.json({ sucesso: true, mensagem: 'Conta da direção criada! Agora faça login.' });
+});
+
+// ─── CADASTRO DIREÇÃO (legado) ─────────────────────────────────────────────────
 app.post('/api/cadastrar-direcao', async (req, res) => {
         const { nome, email, senha } = req.body;
 

@@ -583,8 +583,11 @@ btnReenviarCodigo.addEventListener('click', async () => {
   if (!dadosCadastroPendente) return;
   btnReenviarCodigo.disabled = true;
   btnReenviarCodigo.textContent = '⏳ Enviando...';
+  const reenviarEndpoint = dadosCadastroPendente.tipo === 'direcao'
+    ? '/api/iniciar-cadastro-direcao'
+    : '/api/iniciar-cadastro';
   try {
-    const res = await fetch('/api/iniciar-cadastro', {
+    const res = await fetch(reenviarEndpoint, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(dadosCadastroPendente)
@@ -612,8 +615,12 @@ formVerificacaoCadastro.addEventListener('submit', async e => {
   mensagemVerificacao.style.color = 'var(--text-secondary)';
   mensagemVerificacao.textContent = '⏳ Verificando...';
 
+  const endpoint = dadosCadastroPendente.tipo === 'direcao'
+    ? '/api/verificar-codigo-direcao'
+    : '/api/verificar-codigo-cadastro';
+
   try {
-    const res = await fetch('/api/verificar-codigo-cadastro', {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ email: dadosCadastroPendente.email, codigo })
@@ -622,11 +629,12 @@ formVerificacaoCadastro.addEventListener('submit', async e => {
 
     if (data.sucesso) {
       fecharModalVerificacao();
+      const tipo = dadosCadastroPendente.tipo;
       dadosCadastroPendente = null;
       showToast(data.mensagem, 'success', 'Cadastro Confirmado! ✅');
       loginForm.reset();
       modoCadastro = false;
-      formTitulo.textContent = "Login do Aluno";
+      formTitulo.textContent = tipo === 'direcao' ? "Login da Direção" : "Login do Aluno";
       botaoLogin.textContent = "Entrar";
       mostrarCadastro.textContent = "Não tem conta? Cadastrar";
       nomeInput.style.display = "none";
@@ -707,8 +715,13 @@ async function logarAluno(email,senha){
 async function cadastrarDirecao(nome,email,senha){
   if(!nome||!email||!senha){ showToast('Por favor, preencha todos os campos!', 'warning'); return; }
 
+  if(senha.length < 6){
+    showToast('A senha deve ter pelo menos 6 caracteres.', 'warning');
+    return;
+  }
+
   try {
-    const res = await fetch('/api/cadastrar-direcao', {
+    const res = await fetch('/api/iniciar-cadastro-direcao', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({nome, email, senha})
@@ -716,17 +729,14 @@ async function cadastrarDirecao(nome,email,senha){
     const data = await res.json();
 
     if(data.sucesso){
-      showToast(data.mensagem, 'success', 'Cadastro Realizado');
-      loginForm.reset();
-      modoCadastro=false;
-      formTitulo.textContent="Login da Direção";
-      botaoLogin.textContent="Entrar";
-      mostrarCadastro.textContent="Não tem conta? Cadastrar";
+      dadosCadastroPendente = { nome, email, senha, tipo: 'direcao' };
+      showToast('Código enviado! Verifique seu e-mail.', 'info', '📧 E-mail Enviado');
+      abrirModalVerificacao(email);
     } else {
       showToast(data.erro, 'error');
     }
   } catch(error) {
-    showToast('Erro ao cadastrar membro da direção!', 'error');
+    showToast('Erro ao iniciar cadastro. Tente novamente.', 'error');
   }
 }
 
