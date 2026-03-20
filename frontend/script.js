@@ -549,6 +549,104 @@ loginForm.addEventListener("submit", async e => {
   }
 });
 
+// ─── VERIFICAÇÃO DE CADASTRO POR E-MAIL ───────────────────────────────────
+const modalVerificacaoCadastro = document.getElementById('modalVerificacaoCadastro');
+const formVerificacaoCadastro = document.getElementById('formVerificacaoCadastro');
+const codigoVerificacaoInput = document.getElementById('codigoVerificacao');
+const emailVerificandoTexto = document.getElementById('emailVerificandoTexto');
+const mensagemVerificacao = document.getElementById('mensagemVerificacao');
+const btnReenviarCodigo = document.getElementById('btnReenviarCodigo');
+const btnCancelarVerificacao = document.getElementById('btnCancelarVerificacao');
+
+let dadosCadastroPendente = null;
+
+function abrirModalVerificacao(email) {
+  emailVerificandoTexto.textContent = email;
+  codigoVerificacaoInput.value = '';
+  mensagemVerificacao.textContent = '';
+  modalVerificacaoCadastro.classList.remove('hidden');
+  modalVerificacaoCadastro.style.display = 'flex';
+  setTimeout(() => codigoVerificacaoInput.focus(), 100);
+}
+
+function fecharModalVerificacao() {
+  modalVerificacaoCadastro.classList.add('hidden');
+  modalVerificacaoCadastro.style.display = 'none';
+}
+
+btnCancelarVerificacao.addEventListener('click', () => {
+  fecharModalVerificacao();
+  dadosCadastroPendente = null;
+});
+
+btnReenviarCodigo.addEventListener('click', async () => {
+  if (!dadosCadastroPendente) return;
+  btnReenviarCodigo.disabled = true;
+  btnReenviarCodigo.textContent = '⏳ Enviando...';
+  try {
+    const res = await fetch('/api/iniciar-cadastro', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(dadosCadastroPendente)
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      mensagemVerificacao.style.color = 'green';
+      mensagemVerificacao.textContent = '✅ Novo código enviado!';
+    } else {
+      mensagemVerificacao.style.color = 'red';
+      mensagemVerificacao.textContent = data.erro;
+    }
+  } catch {
+    mensagemVerificacao.style.color = 'red';
+    mensagemVerificacao.textContent = 'Erro ao reenviar. Tente novamente.';
+  }
+  setTimeout(() => { btnReenviarCodigo.disabled = false; btnReenviarCodigo.textContent = '🔄 Reenviar código'; }, 30000);
+});
+
+formVerificacaoCadastro.addEventListener('submit', async e => {
+  e.preventDefault();
+  const codigo = codigoVerificacaoInput.value.trim();
+  if (!codigo || !dadosCadastroPendente) return;
+
+  mensagemVerificacao.style.color = 'var(--text-secondary)';
+  mensagemVerificacao.textContent = '⏳ Verificando...';
+
+  try {
+    const res = await fetch('/api/verificar-codigo-cadastro', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email: dadosCadastroPendente.email, codigo })
+    });
+    const data = await res.json();
+
+    if (data.sucesso) {
+      fecharModalVerificacao();
+      dadosCadastroPendente = null;
+      showToast(data.mensagem, 'success', 'Cadastro Confirmado! ✅');
+      loginForm.reset();
+      modoCadastro = false;
+      formTitulo.textContent = "Login do Aluno";
+      botaoLogin.textContent = "Entrar";
+      mostrarCadastro.textContent = "Não tem conta? Cadastrar";
+      nomeInput.style.display = "none";
+      serieSelect.style.display = "none";
+      esqueceuSenhaContainer.style.display = "block";
+    } else {
+      mensagemVerificacao.style.color = 'red';
+      mensagemVerificacao.textContent = data.erro;
+    }
+  } catch {
+    mensagemVerificacao.style.color = 'red';
+    mensagemVerificacao.textContent = 'Erro ao verificar. Tente novamente.';
+  }
+});
+
+// Só permite dígitos no campo de código
+codigoVerificacaoInput.addEventListener('input', () => {
+  codigoVerificacaoInput.value = codigoVerificacaoInput.value.replace(/\D/g, '');
+});
+
 async function cadastrarAluno(nome,email,senha,serie){
   if(!nome||!email||!senha||!serie){ showToast('Por favor, preencha todos os campos!', 'warning'); return; }
 
@@ -557,8 +655,13 @@ async function cadastrarAluno(nome,email,senha,serie){
     return;
   }
 
+  if(senha.length < 6){
+    showToast('A senha deve ter pelo menos 6 caracteres.', 'warning');
+    return;
+  }
+
   try {
-    const res = await fetch('/api/cadastrar', {
+    const res = await fetch('/api/iniciar-cadastro', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({nome, email, senha, serie})
@@ -566,17 +669,14 @@ async function cadastrarAluno(nome,email,senha,serie){
     const data = await res.json();
 
     if(data.sucesso){
-      showToast(data.mensagem, 'success', 'Cadastro Realizado');
-      loginForm.reset();
-      modoCadastro=false;
-      formTitulo.textContent="Login do Aluno";
-      botaoLogin.textContent="Entrar";
-      mostrarCadastro.textContent="Não tem conta? Cadastrar";
+      dadosCadastroPendente = { nome, email, senha, serie };
+      showToast('Código enviado! Verifique seu e-mail.', 'info', '📧 E-mail Enviado');
+      abrirModalVerificacao(email);
     } else {
       showToast(data.erro, 'error');
     }
   } catch(error) {
-    showToast('Erro ao cadastrar aluno!', 'error');
+    showToast('Erro ao iniciar cadastro. Tente novamente.', 'error');
   }
 }
 

@@ -2,7 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
+const nodemailer = require('nodemailer');
 const path = require('path');
+
+// Armazenamento temporário de registros pendentes (expira em 15 min)
+const pendentesVerificacao = new Map();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -89,7 +93,121 @@ app.post('/api/login-google/turma', async (req, res) => {
         res.json({ sucesso: true, usuario: { id: criado.id, nome: criado.nome, email: criado.email, serie: criado.serie } });
 });
 
-// ─── CADASTRO ALUNO ──────────────────────────────────────────────────────────
+// ─── EMAIL TRANSPORTER ───────────────────────────────────────────────────────
+function criarTransporter() {
+        return nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                        user: process.env.EMAIL_REMETENTE,
+                        pass: process.env.EMAIL_SENHA_APP
+                }
+        });
+}
+
+async function enviarCodigoEmail(destinatario, codigo, nome) {
+        const transporter = criarTransporter();
+        await transporter.sendMail({
+                from: `"Agenda Escolar Tânia Varella Ferreira" <${process.env.EMAIL_REMETENTE}>`,
+                to: destinatario,
+                subject: '🎓 Código de Verificação - Cadastro',
+                html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background: #f0f4ff; border-radius: 12px;">
+                                <h2 style="color: #4361ee; text-align: center;">📚 Agenda Escolar Tânia Varella Ferreira</h2>
+                                <p>Olá, <strong>${nome}</strong>!</p>
+                                <p>Seu código de verificação para confirmar o cadastro é:</p>
+                                <div style="background: #4361ee; color: white; font-size: 2.5rem; font-weight: bold; letter-spacing: 12px; text-align: center; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                                        ${codigo}
+                                </div>
+                                <p style="color: #666; font-size: 0.9rem;">Este código expira em <strong>15 minutos</strong>. Não compartilhe com ninguém.</p>
+                                <p style="color: #999; font-size: 0.8rem;">Se você não solicitou este cadastro, ignore este e-mail.</p>
+                        </div>
+                `
+        });
+}
+
+// ─── INICIAR CADASTRO ALUNO (envia código) ───────────────────────────────────
+app.post('/api/iniciar-cadastro', async (req, res) => {
+        const { nome, email, senha, serie } = req.body;
+
+        if (!nome || !email || !senha || !serie) {
+                return res.status(400).json({ sucesso: false, erro: 'Preencha todos os campos!' });
+        }
+
+        if (!email.endsWith('@escola.pr.gov.br')) {
+                return res.status(400).json({ sucesso: false, erro: 'O e-mail deve terminar com @escola.pr.gov.br' });
+        }
+
+        if (senha.length < 6) {
+                return res.status(400).json({ sucesso: false, erro: 'A senha deve ter pelo menos 6 caracteres.' });
+        }
+
+        if (!process.env.EMAIL_REMETENTE || !process.env.EMAIL_SENHA_APP) {
+                return res.status(500).json({ sucesso: false, erro: 'Serviço de e-mail não configurado. Contate o administrador.' });
+        }
+
+        const { data: existe } = await supabase
+                .from('Cadastro_Aluno')
+                .select('id')
+                .eq('email', email)
+                .single();
+
+        if (existe) {
+                return res.status(400).json({ sucesso: false, erro: 'Este e-mail já está cadastrado!' });
+        }
+
+        const codigo = String(Math.floor(100000 + Math.random() * 900000));
+        const senhaHash = bcrypt.hashSync(senha, 10);
+        const expiracao = Date.now() + 15 * 60 * 1000;
+
+        pendentesVerificacao.set(email, { nome, senhaHash, serie, codigo, expiracao });
+
+        try {
+                await enviarCodigoEmail(email, codigo, nome);
+                res.json({ sucesso: true, mensagem: 'Código enviado para seu e-mail!' });
+        } catch (err) {
+                console.error('Erro ao enviar e-mail:', err.message);
+                pendentesVerificacao.delete(email);
+                res.status(500).json({ sucesso: false, erro: 'Erro ao enviar e-mail. Verifique se o endereço está correto.' });
+        }
+});
+
+// ─── VERIFICAR CÓDIGO E CONCLUIR CADASTRO ────────────────────────────────────
+app.post('/api/verificar-codigo-cadastro', async (req, res) => {
+        const { email, codigo } = req.body;
+
+        if (!email || !codigo) {
+                return res.status(400).json({ sucesso: false, erro: 'Dados incompletos.' });
+        }
+
+        const pendente = pendentesVerificacao.get(email);
+
+        if (!pendente) {
+                return res.status(400).json({ sucesso: false, erro: 'Nenhum cadastro pendente para este e-mail. Tente novamente.' });
+        }
+
+        if (Date.now() > pendente.expiracao) {
+                pendentesVerificacao.delete(email);
+                return res.status(400).json({ sucesso: false, erro: 'Código expirado. Solicite um novo cadastro.' });
+        }
+
+        if (pendente.codigo !== String(codigo).trim()) {
+                return res.status(400).json({ sucesso: false, erro: 'Código incorreto. Verifique e tente novamente.' });
+        }
+
+        const { error } = await supabase
+                .from('Cadastro_Aluno')
+                .insert({ nome: pendente.nome, email, senha: pendente.senhaHash, serie: pendente.serie, ativo: true });
+
+        pendentesVerificacao.delete(email);
+
+        if (error) {
+                return res.status(500).json({ sucesso: false, erro: 'Erro ao cadastrar aluno.' });
+        }
+
+        res.json({ sucesso: true, mensagem: 'Cadastro confirmado! Agora faça login.' });
+});
+
+// ─── CADASTRO ALUNO (legado, mantido) ────────────────────────────────────────
 app.post('/api/cadastrar', async (req, res) => {
         const { nome, email, senha, serie } = req.body;
 

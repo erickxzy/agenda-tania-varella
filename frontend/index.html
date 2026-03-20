@@ -7,7 +7,7 @@
         <meta http-equiv="Pragma" content="no-cache">
         <meta http-equiv="Expires" content="0">
         <title>Agenda Escolar Tânia Varella Ferreira</title>
-        <link rel="stylesheet" href="style.css?v=2025">
+        <link rel="stylesheet" href="style.css?v=2026b">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -195,6 +195,30 @@
 
         <button id="btnCriadores" class="btn-criadores">👥 Criadores</button>
 
+        <!-- Modal Verificação de Cadastro -->
+        <div id="modalVerificacaoCadastro" class="modal-overlay hidden" style="display: none;">
+                <div class="modal-conteudo">
+                        <h2>📧 Verificar E-mail</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
+                                Enviamos um código de 6 dígitos para seu e-mail.<br>
+                                <strong id="emailVerificandoTexto"></strong>
+                        </p>
+                        <form id="formVerificacaoCadastro">
+                                <input type="text" id="codigoVerificacao" placeholder="Digite o código de 6 dígitos" maxlength="6" required autocomplete="one-time-code" style="font-size: 1.4rem; letter-spacing: 8px; text-align: center;">
+                                <button type="submit" class="btn-fechar-modal" style="width: 100%; margin-top: 15px;">
+                                        ✅ Confirmar Cadastro
+                                </button>
+                        </form>
+                        <button id="btnReenviarCodigo" style="background: none; border: none; color: var(--primary-color); cursor: pointer; margin-top: 12px; font-size: 0.9rem; width: 100%; text-align: center;">
+                                🔄 Reenviar código
+                        </button>
+                        <button id="btnCancelarVerificacao" class="btn-fechar-modal" style="background: var(--text-tertiary); margin-top: 8px;">
+                                Cancelar
+                        </button>
+                        <p id="mensagemVerificacao" style="margin-top: 10px; text-align: center; font-size: 0.9rem;"></p>
+                </div>
+        </div>
+
         <div id="modalCriadores" class="modal-overlay hidden" style="display: none;">
                 <div class="modal-conteudo">
                         <h2>🌟 Criadores do Site</h2>
@@ -369,6 +393,6 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026"></script>
+        <script src="script.js?v=2026b"></script>
 </body>
 </html>
