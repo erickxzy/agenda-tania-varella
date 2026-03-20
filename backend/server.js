@@ -261,7 +261,7 @@ app.post('/api/cadastrar-direcao', async (req, res) => {
         const { data: existe, error: erroBusca } = await supabase
                 .from('Login_Direção')
                 .select('id')
-                .eq('email', email)
+                .eq('E-mail', email)
                 .single();
 
         if (erroBusca && erroBusca.code !== 'PGRST116') {
@@ -277,7 +277,7 @@ app.post('/api/cadastrar-direcao', async (req, res) => {
 
         const { error } = await supabase
                 .from('Login_Direção')
-                .insert({ nome, email, senha: senhaHash });
+                .insert({ 'E-mail': email, 'Senha': senhaHash });
 
         if (error) {
                 console.error('Erro ao inserir direção:', error.message);
@@ -346,14 +346,14 @@ app.post('/api/login-direcao', async (req, res) => {
         const { data: membro } = await supabase
                 .from('Login_Direção')
                 .select('*')
-                .eq('email', email)
+                .eq('E-mail', email)
                 .single();
 
         if (!membro) {
                 return res.status(400).json({ sucesso: false, erro: 'E-mail ou senha incorretos!' });
         }
 
-        const senhaValida = bcrypt.compareSync(senha, membro.senha);
+        const senhaValida = bcrypt.compareSync(senha, membro['Senha']);
         if (!senhaValida) {
                 return res.status(400).json({ sucesso: false, erro: 'E-mail ou senha incorretos!' });
         }
@@ -362,8 +362,8 @@ app.post('/api/login-direcao', async (req, res) => {
                 sucesso: true,
                 usuario: {
                         id: membro.id,
-                        nome: membro.nome,
-                        email: membro.email
+                        nome: membro.nome || email.split('@')[0],
+                        email: membro['E-mail']
                 }
         });
 });
@@ -381,7 +381,7 @@ app.post('/api/recuperar-senha', async (req, res) => {
                 const { data } = await supabase.from('Cadastro_Aluno').select('*').eq('email', email).single();
                 usuario = data;
         } else if (tipo === 'direcao') {
-                const { data } = await supabase.from('Login_Direção').select('*').eq('email', email).single();
+                const { data } = await supabase.from('Login_Direção').select('*').eq('E-mail', email).single();
                 usuario = data;
         }
 
@@ -438,7 +438,7 @@ app.post('/api/resetar-senha', async (req, res) => {
         if (recuperacao.tipo === 'aluno') {
                 await supabase.from('Cadastro_Aluno').update({ senha: senhaHash }).eq('email', email);
         } else if (recuperacao.tipo === 'direcao') {
-                await supabase.from('Login_Direção').update({ senha: senhaHash }).eq('email', email);
+                await supabase.from('Login_Direção').update({ 'Senha': senhaHash }).eq('E-mail', email);
         }
 
         await supabase.from('recuperacao_senha').update({ usado: 1 }).eq('id', recuperacao.id);
