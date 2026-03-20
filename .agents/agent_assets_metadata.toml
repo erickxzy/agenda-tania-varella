@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "q7B2rnPTynbQc0XVKvPyo"
+uri = "file://agenda-escolar.tar.gz"
+type = "unspecified"
+title = "Agenda Escolar Tânia Varella Ferreira - Projeto Completo"
