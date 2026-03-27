@@ -2544,59 +2544,78 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   pwaPrompt = e;
 
+  const isDesktop = window.innerWidth >= 640;
   const banner = document.createElement('div');
   banner.id = 'pwaBanner';
-  banner.style.cssText = `
-    position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(100px);
-    z-index:9999; width:calc(100% - 32px); max-width:360px;
-    background:var(--card-bg); border:1px solid var(--border-color);
-    border-radius:20px; padding:18px 16px 16px;
-    box-shadow:0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06);
-    opacity:0; transition:transform 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease;
-    font-family:inherit;
-  `;
+
+  if (isDesktop) {
+    banner.style.cssText = `
+      position:fixed; bottom:24px; right:24px;
+      z-index:9999; width:300px;
+      background:var(--card-bg); border:1px solid var(--border-color);
+      border-radius:18px; padding:18px 16px 15px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.06);
+      opacity:0; transform:translateY(20px);
+      transition:transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
+      font-family:inherit;
+    `;
+  } else {
+    banner.style.cssText = `
+      position:fixed; bottom:16px; left:50%; transform:translateX(-50%) translateY(100px);
+      z-index:9999; width:calc(100% - 28px); max-width:380px;
+      background:var(--card-bg); border:1px solid var(--border-color);
+      border-radius:20px; padding:18px 16px 15px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06);
+      opacity:0; transition:transform 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease;
+      font-family:inherit;
+    `;
+  }
+
   banner.innerHTML = `
     <button id="btnFecharPwa" style="
       position:absolute; top:10px; right:12px;
       background:none; border:none; color:var(--text-tertiary);
       font-size:1rem; cursor:pointer; padding:4px; line-height:1;
-      width:auto; height:auto; min-height:unset;
+      width:auto; height:auto; min-height:unset; opacity:0.7;
     ">✕</button>
 
-    <div style="display:flex; align-items:center; gap:13px; margin-bottom:14px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px; padding-right:20px;">
       <div style="
-        width:48px; height:48px; border-radius:12px; flex-shrink:0;
+        width:46px; height:46px; border-radius:12px; flex-shrink:0;
         background:linear-gradient(135deg,#4361ee,#3a0ca3);
         display:flex; align-items:center; justify-content:center;
-        font-size:1.6rem; box-shadow:0 4px 14px rgba(67,97,238,0.35);
+        font-size:1.5rem; box-shadow:0 4px 14px rgba(67,97,238,0.35);
       ">📚</div>
       <div style="min-width:0;">
-        <div style="font-weight:700; font-size:0.95rem; color:var(--text-primary); margin-bottom:2px;">Agenda Escolar</div>
-        <div style="font-size:0.78rem; color:var(--text-tertiary); line-height:1.4;">Adicionar à tela inicial e usar como app</div>
+        <div style="font-weight:700; font-size:0.92rem; color:var(--text-primary); margin-bottom:3px; line-height:1.2;">Agenda Escolar</div>
+        <div style="font-size:0.76rem; color:var(--text-tertiary); line-height:1.4;">Instalar como app na ${isDesktop ? 'área de trabalho' : 'tela inicial'}</div>
       </div>
     </div>
 
     <div style="display:flex; gap:8px;">
       <button id="btnNaoPwa" style="
-        flex:1; padding:10px; border-radius:11px;
+        flex:1; padding:9px 12px; border-radius:10px;
         background:var(--input-bg); border:1px solid var(--border-color);
-        color:var(--text-secondary); font-size:0.85rem; font-weight:600;
+        color:var(--text-secondary); font-size:0.82rem; font-weight:600;
         cursor:pointer; width:auto; height:auto; min-height:unset;
-        transition:opacity 0.2s;
       ">Agora não</button>
       <button id="btnInstalarApp" style="
-        flex:2; padding:10px; border-radius:11px;
+        flex:2; padding:9px 12px; border-radius:10px;
         background:linear-gradient(135deg,#4361ee,#3a0ca3);
-        border:none; color:#fff; font-size:0.88rem; font-weight:700;
+        border:none; color:#fff; font-size:0.84rem; font-weight:700;
         cursor:pointer; width:auto; height:auto; min-height:unset;
-        box-shadow:0 4px 18px rgba(67,97,238,0.35);
-        transition:opacity 0.2s;
-      ">📲 Instalar app</button>
+        box-shadow:0 4px 14px rgba(67,97,238,0.3);
+      ">📲 Instalar</button>
     </div>
   `;
+
   document.body.appendChild(banner);
   requestAnimationFrame(() => {
-    banner.style.transform = 'translateX(-50%) translateY(0)';
+    if (isDesktop) {
+      banner.style.transform = 'translateY(0)';
+    } else {
+      banner.style.transform = 'translateX(-50%) translateY(0)';
+    }
     banner.style.opacity = '1';
   });
 
