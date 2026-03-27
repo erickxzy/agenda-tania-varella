@@ -7,7 +7,14 @@
         <meta http-equiv="Pragma" content="no-cache">
         <meta http-equiv="Expires" content="0">
         <title>Agenda Escolar Tânia Varella Ferreira</title>
-        <link rel="stylesheet" href="style.css?v=2026f">
+        <link rel="manifest" href="/manifest.json">
+        <meta name="theme-color" content="#4361ee">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
+        <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+        <link rel="stylesheet" href="style.css?v=2026g">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -132,6 +139,18 @@
                 <div class="secao-painel">
                         <h3>📊 Enquetes da Turma</h3>
                         <div id="enquetesAluno" class="feature-lista-aluno"></div>
+                </div>
+
+                <div class="secao-painel">
+                        <h3>🏆 Ranking da Turma</h3>
+                        <p style="font-size:0.8rem; color:var(--text-tertiary); margin-bottom:10px;">Quem mais completou tarefas na turma</p>
+                        <div id="rankingTurma" class="feature-lista-aluno"></div>
+                </div>
+
+                <div class="secao-painel">
+                        <h3>📋 Meu Boletim</h3>
+                        <p style="font-size:0.8rem; color:var(--text-tertiary); margin-bottom:10px;">Boletins e observações enviadas pela direção</p>
+                        <div id="boletinsAluno" class="feature-lista-aluno"></div>
                 </div>
         </div>
 
@@ -558,6 +577,44 @@
                         <button id="btnConfirmarTurmaGoogle" class="btn-fechar-modal" style="width: 100%;">
                                 ✅ Confirmar e Entrar
                         </button>
+                </div>
+        </div>
+
+        <!-- Modal Boletim / Observação -->
+        <div id="modalBoletim" class="modal-overlay hidden" style="display:none;">
+                <div class="modal-conteudo">
+                        <h2>📋 Enviar para Aluno</h2>
+                        <p id="subtituloBoletim" style="color:var(--text-secondary); margin-bottom:15px; text-align:center; font-size:0.9rem;"></p>
+
+                        <div class="boletim-tabs">
+                                <button class="boletim-tab active" data-tipo="boletim">📋 Boletim/Arquivo</button>
+                                <button class="boletim-tab" data-tipo="observacao">💬 Observação</button>
+                        </div>
+
+                        <div id="boletimArquivoArea" style="margin-top:14px;">
+                                <div class="boletim-upload-area" id="boletimUploadArea">
+                                        <span class="boletim-upload-icone">📎</span>
+                                        <p>Clique para selecionar arquivo</p>
+                                        <p style="font-size:0.75rem; color:var(--text-tertiary);">Foto, PDF ou imagem — máx. 15MB</p>
+                                        <div class="boletim-upload-btns">
+                                                <label class="btn-upload-cam">
+                                                        📷 Câmera
+                                                        <input type="file" id="boletimArquivoCamera" accept="image/*" capture="environment" style="display:none;">
+                                                </label>
+                                                <label class="btn-upload-file">
+                                                        📂 Arquivo/Galeria
+                                                        <input type="file" id="boletimArquivoGaleria" accept="image/*,application/pdf" style="display:none;">
+                                                </label>
+                                        </div>
+                                </div>
+                                <div id="boletimArquivoPreview" style="margin-top:10px; text-align:center;"></div>
+                        </div>
+
+                        <textarea id="boletimObservacao" placeholder="Observação / mensagem para o aluno (opcional)..." rows="3" style="margin-top:12px; width:100%; resize:vertical;"></textarea>
+
+                        <button id="btnEnviarBoletim" class="btn-fechar-modal" style="width:100%; margin-top:15px;">✅ Enviar</button>
+                        <button id="btnFecharBoletim" class="btn-fechar-modal" style="background:var(--text-tertiary); margin-top:8px;">Cancelar</button>
+                        <p id="boletimMsg" style="margin-top:10px; text-align:center; font-size:0.9rem;"></p>
                 </div>
         </div>
 

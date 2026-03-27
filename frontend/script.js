@@ -905,6 +905,8 @@ async function mostrarPainelAluno(aluno){
   carregarTarefasAluno(aluno);
   carregarDuvidasAluno(aluno.serie);
   carregarEnquetesAluno(aluno);
+  carregarRankingTarefas(aluno.serie);
+  carregarBoletinsAluno(aluno);
 
   document.getElementById('btnEnviarDuvida').onclick = () => enviarDuvidaAluno(aluno);
 }
@@ -1099,10 +1101,14 @@ async function atualizarListaAlunos(){
         <td>${a.email}</td>
         <td>${a.serie}</td>
         <td>
+          <button class="btn-boletim" data-email="${a.email}" data-nome="${a.nome}" data-serie="${a.serie}">📋 Boletim</button>
           <button class="excluir" data-id="${a.id}" data-nome="${a.nome}">🗑️ Excluir</button>
         </td>
       `;
       tbody.appendChild(tr);
+
+      const btnBoletimAluno = tr.querySelector('.btn-boletim');
+      btnBoletimAluno.addEventListener('click', () => abrirModalBoletim({ email: a.email, nome: a.nome, serie: a.serie }));
       
       const btnExcluir = tr.querySelector('.excluir');
       btnExcluir.addEventListener('click', () => excluirAluno(a.id, a.nome));
@@ -2326,3 +2332,231 @@ async function deletarEnquete(id) {
   showToast('Enquete excluída.', 'success');
   carregarEnquetesAdmin();
 }
+
+// ══════════════════════════════════════════════════════════════
+// ─── RANKING DE TAREFAS ───────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+async function carregarRankingTarefas(turma) {
+  const container = document.getElementById('rankingTurma');
+  if (!container) return;
+  container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Carregando...</p>';
+
+  try {
+    const res = await fetch(`/api/ranking/${encodeURIComponent(turma)}`);
+    const ranking = await res.json();
+
+    if (!ranking.length) {
+      container.innerHTML = '<p class="ranking-vazio">🏁 Nenhuma tarefa concluída ainda. Seja o primeiro!</p>';
+      return;
+    }
+
+    const medalhas = ['🥇', '🥈', '🥉'];
+    const html = `<ul class="ranking-lista">${ranking.map((item, i) => `
+      <li class="ranking-item ${i < 3 ? 'pos-' + (i + 1) : ''}">
+        <span class="ranking-posicao">${medalhas[i] || (i + 1) + 'º'}</span>
+        <span class="ranking-nome">${sanitizeHTML(item.nome)}</span>
+        <span class="ranking-total">${item.total} ✅</span>
+      </li>`).join('')}
+    </ul>`;
+    container.innerHTML = html;
+  } catch {
+    container.innerHTML = '<p class="ranking-vazio">Erro ao carregar ranking.</p>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ─── BOLETIM DO ALUNO (VISUALIZAÇÃO) ─────────────────────────
+// ══════════════════════════════════════════════════════════════
+async function carregarBoletinsAluno(aluno) {
+  const container = document.getElementById('boletinsAluno');
+  if (!container) return;
+  container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Carregando...</p>';
+
+  try {
+    const res = await fetch(`/api/boletins/aluno/${encodeURIComponent(aluno.email)}`);
+    const boletins = await res.json();
+
+    if (!boletins.length) {
+      container.innerHTML = '<p class="feature-vazia">Nenhum boletim ou observação enviado ainda.</p>';
+      return;
+    }
+
+    container.innerHTML = boletins.map(b => {
+      const data = b.created_at ? new Date(b.created_at).toLocaleDateString('pt-BR') : '';
+      const tipoLabel = b.tipo === 'observacao' ? '💬 Observação' : '📋 Boletim';
+      const isPdf = b.arquivo_nome?.toLowerCase().endsWith('.pdf');
+      const arquivoHtml = b.arquivo_url ? `
+        <a class="boletim-card-arquivo" href="${b.arquivo_url}" target="_blank" rel="noopener">
+          ${isPdf ? '📄' : '🖼️'} ${sanitizeHTML(b.arquivo_nome || 'Ver arquivo')}
+        </a>` : '';
+      const obsHtml = b.observacao ? `<p class="boletim-card-obs">${sanitizeHTML(b.observacao)}</p>` : '';
+
+      return `
+        <div class="boletim-card ${b.tipo === 'observacao' ? 'tipo-observacao' : ''}">
+          <div class="boletim-card-header">
+            <span class="boletim-card-tipo">${tipoLabel}</span>
+            <span class="boletim-card-data">${data}</span>
+          </div>
+          ${obsHtml}
+          ${arquivoHtml}
+        </div>`;
+    }).join('');
+  } catch {
+    container.innerHTML = '<p class="feature-vazia">Erro ao carregar boletins.</p>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ─── MODAL DE BOLETIM (DIREÇÃO/ADMIN ENVIA) ──────────────────
+// ══════════════════════════════════════════════════════════════
+let boletimAlunoAtual = null;
+let boletimTipoAtual = 'boletim';
+let boletimArquivoAtual = null;
+
+const modalBoletim = document.getElementById('modalBoletim');
+const btnEnviarBoletim = document.getElementById('btnEnviarBoletim');
+const btnFecharBoletim = document.getElementById('btnFecharBoletim');
+const boletimObservacao = document.getElementById('boletimObservacao');
+const boletimArquivoArea = document.getElementById('boletimArquivoArea');
+const boletimArquivoPreview = document.getElementById('boletimArquivoPreview');
+const boletimMsg = document.getElementById('boletimMsg');
+const boletimSubtitulo = document.getElementById('subtituloBoletim');
+
+function abrirModalBoletim(aluno) {
+  boletimAlunoAtual = aluno;
+  boletimTipoAtual = 'boletim';
+  boletimArquivoAtual = null;
+  boletimObservacao.value = '';
+  boletimArquivoPreview.innerHTML = '';
+  boletimMsg.textContent = '';
+  if (boletimSubtitulo) boletimSubtitulo.textContent = `Para: ${aluno.nome} — Turma ${aluno.serie || ''}`;
+
+  document.querySelectorAll('.boletim-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tipo === 'boletim');
+  });
+  boletimArquivoArea.style.display = 'block';
+
+  document.getElementById('boletimArquivoCamera').value = '';
+  document.getElementById('boletimArquivoGaleria').value = '';
+
+  modalBoletim.classList.remove('hidden');
+  modalBoletim.style.display = 'flex';
+}
+
+function fecharModalBoletim() {
+  modalBoletim.classList.add('hidden');
+  modalBoletim.style.display = 'none';
+  boletimAlunoAtual = null;
+  boletimArquivoAtual = null;
+}
+
+if (btnFecharBoletim) btnFecharBoletim.addEventListener('click', fecharModalBoletim);
+
+document.querySelectorAll('.boletim-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    boletimTipoAtual = tab.dataset.tipo;
+    document.querySelectorAll('.boletim-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    boletimArquivoArea.style.display = boletimTipoAtual === 'boletim' ? 'block' : 'none';
+  });
+});
+
+function mostrarPreviewArquivo(file) {
+  boletimArquivoAtual = file;
+  if (!file) { boletimArquivoPreview.innerHTML = ''; return; }
+  if (file.type.startsWith('image/')) {
+    const url = URL.createObjectURL(file);
+    boletimArquivoPreview.innerHTML = `<img src="${url}" class="boletim-preview-img" alt="Preview">`;
+  } else {
+    boletimArquivoPreview.innerHTML = `<div class="boletim-preview-pdf">📄 <span>${sanitizeHTML(file.name)}</span></div>`;
+  }
+}
+
+document.getElementById('boletimArquivoCamera')?.addEventListener('change', e => {
+  mostrarPreviewArquivo(e.target.files[0] || null);
+});
+
+document.getElementById('boletimArquivoGaleria')?.addEventListener('change', e => {
+  mostrarPreviewArquivo(e.target.files[0] || null);
+});
+
+if (btnEnviarBoletim) {
+  btnEnviarBoletim.addEventListener('click', async () => {
+    if (!boletimAlunoAtual) return;
+    const obs = boletimObservacao.value.trim();
+
+    if (boletimTipoAtual === 'boletim' && !boletimArquivoAtual && !obs) {
+      boletimMsg.style.color = 'red';
+      boletimMsg.textContent = 'Adicione um arquivo ou uma observação.';
+      return;
+    }
+    if (boletimTipoAtual === 'observacao' && !obs) {
+      boletimMsg.style.color = 'red';
+      boletimMsg.textContent = 'Digite uma observação.';
+      return;
+    }
+
+    btnEnviarBoletim.disabled = true;
+    btnEnviarBoletim.textContent = '⏳ Enviando...';
+    boletimMsg.textContent = '';
+
+    const formData = new FormData();
+    formData.append('aluno_email', boletimAlunoAtual.email);
+    formData.append('aluno_nome', boletimAlunoAtual.nome);
+    formData.append('turma', boletimAlunoAtual.serie || '');
+    formData.append('tipo', boletimTipoAtual);
+    formData.append('observacao', obs);
+    formData.append('enviado_por', usuarioAtual?.nome || 'Direção');
+    if (boletimArquivoAtual) formData.append('arquivo', boletimArquivoAtual);
+
+    try {
+      const res = await adminFetch('/api/boletins', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (data.sucesso) {
+        fecharModalBoletim();
+        showToast('Enviado com sucesso!', 'success', '📋 Boletim Enviado');
+      } else {
+        boletimMsg.style.color = 'red';
+        boletimMsg.textContent = data.erro || 'Erro ao enviar.';
+      }
+    } catch {
+      boletimMsg.style.color = 'red';
+      boletimMsg.textContent = 'Erro de conexão. Tente novamente.';
+    }
+
+    btnEnviarBoletim.disabled = false;
+    btnEnviarBoletim.textContent = '✅ Enviar';
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// ─── PWA — SERVICE WORKER & INSTALL BANNER ───────────────────
+// ══════════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
+let pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  pwaPrompt = e;
+
+  const banner = document.createElement('div');
+  banner.className = 'pwa-banner';
+  banner.innerHTML = `
+    <span>📱 Instalar app na tela inicial</span>
+    <button id="btnInstalarApp">Instalar</button>
+    <button class="pwa-banner-fechar" id="btnFecharPwa">✕</button>
+  `;
+  document.body.appendChild(banner);
+
+  document.getElementById('btnInstalarApp').addEventListener('click', () => {
+    pwaPrompt.prompt();
+    pwaPrompt.userChoice.then(() => { banner.remove(); pwaPrompt = null; });
+  });
+
+  document.getElementById('btnFecharPwa').addEventListener('click', () => banner.remove());
+});

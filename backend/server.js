@@ -5,6 +5,29 @@ const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+const uploadsDir = path.join(__dirname, '../frontend/uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+const storage = multer.diskStorage({
+        destination: (req, file, cb) => cb(null, uploadsDir),
+        filename: (req, file, cb) => {
+                const ext = path.extname(file.originalname);
+                const unique = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
+                cb(null, unique);
+        }
+});
+const upload = multer({
+        storage,
+        limits: { fileSize: 15 * 1024 * 1024 },
+        fileFilter: (req, file, cb) => {
+                const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+                if (allowed.includes(file.mimetype)) cb(null, true);
+                else cb(new Error('Apenas imagens e PDFs são permitidos.'), false);
+        }
+});
 
 // Armazenamento temporário de registros pendentes (expira em 15 min)
 const pendentesVerificacao = new Map();
@@ -1115,6 +1138,86 @@ app.delete('/api/tarefas/:id', requireAdminAuth, async (req, res) => {
         if (!existe) return res.status(404).json({ erro: 'Tarefa não encontrada.' });
         await supabase.from('tarefas_concluidas').delete().eq('tarefa_id', req.params.id);
         const { error } = await supabase.from('tarefas').delete().eq('id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true });
+});
+
+// ════════════════════════════════════════════════════════
+// ─── RANKING DE TAREFAS ──────────────────────────────────
+// ════════════════════════════════════════════════════════
+app.get('/api/ranking/:turma', async (req, res) => {
+        const { turma } = req.params;
+        const { data: tarefasTurma } = await supabase
+                .from('tarefas')
+                .select('id')
+                .or(`turma.eq.${turma},turma.eq.Todas`);
+
+        const ids = (tarefasTurma || []).map(t => t.id);
+        if (ids.length === 0) return res.json([]);
+
+        const { data: concluidas, error } = await supabase
+                .from('tarefas_concluidas')
+                .select('aluno_nome, aluno_email')
+                .in('tarefa_id', ids);
+
+        if (error) return res.status(500).json({ erro: error.message });
+
+        const contagem = {};
+        (concluidas || []).forEach(item => {
+                const key = item.aluno_nome || item.aluno_email;
+                contagem[key] = (contagem[key] || 0) + 1;
+        });
+
+        const ranking = Object.entries(contagem)
+                .map(([nome, total]) => ({ nome, total }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 10);
+
+        res.json(ranking);
+});
+
+// ════════════════════════════════════════════════════════
+// ─── BOLETINS & OBSERVAÇÕES ──────────────────────────────
+// ════════════════════════════════════════════════════════
+app.post('/api/boletins', requireAdminAuth, upload.single('arquivo'), async (req, res) => {
+        const { aluno_email, aluno_nome, turma, tipo, observacao, enviado_por } = req.body;
+        if (!aluno_email) return res.status(400).json({ erro: 'E-mail do aluno é obrigatório.' });
+
+        let arquivo_url = null;
+        let arquivo_nome = null;
+        if (req.file) {
+                arquivo_url = `/uploads/${req.file.filename}`;
+                arquivo_nome = req.file.originalname;
+        }
+
+        const { data, error } = await supabase.from('boletins').insert({
+                aluno_email, aluno_nome, turma,
+                tipo: tipo || 'boletim',
+                arquivo_url, arquivo_nome, observacao,
+                enviado_por
+        }).select().single();
+
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true, boletim: data });
+});
+
+app.get('/api/boletins/aluno/:email', async (req, res) => {
+        const { data, error } = await supabase
+                .from('boletins')
+                .select('*')
+                .eq('aluno_email', req.params.email)
+                .order('created_at', { ascending: false });
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json(data || []);
+});
+
+app.delete('/api/boletins/:id', requireAdminAuth, async (req, res) => {
+        const { data: b } = await supabase.from('boletins').select('arquivo_url').eq('id', req.params.id).single();
+        if (b?.arquivo_url) {
+                const filePath = path.join(__dirname, '../frontend', b.arquivo_url);
+                try { fs.unlinkSync(filePath); } catch (e) {}
+        }
+        const { error } = await supabase.from('boletins').delete().eq('id', req.params.id);
         if (error) return res.status(500).json({ erro: error.message });
         res.json({ sucesso: true });
 });
