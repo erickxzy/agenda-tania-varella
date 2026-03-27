@@ -829,11 +829,17 @@ app.get('/api/professores-turma/:turma', async (req, res) => {
 
 app.put('/api/professores-turma/:id', requireAdminAuth, async (req, res) => {
         const { id } = req.params;
-        const { status, data } = req.body;
+        const { status, data, professor, materia } = req.body;
+
+        const campos = {};
+        if (status !== undefined) campos.status = status;
+        if (data !== undefined) campos.data = data;
+        if (professor !== undefined) campos.professor = professor;
+        if (materia !== undefined) campos.materia = materia;
 
         const { error } = await supabase
                 .from('Presenças')
-                .update({ status, data })
+                .update(campos)
                 .eq('id', id);
 
         if (error) return res.status(500).json({ sucesso: false, erro: 'Erro ao atualizar presença' });

@@ -400,7 +400,7 @@ const adminPanel = document.getElementById("adminPanel");
 
 const btnDirecao = document.getElementById("btnDirecao");
 const btnAluno = document.getElementById("btnAluno");
-const adminSecreto = document.getElementById("adminSecreto");
+const adminZonaInvisivel = document.getElementById("adminZonaInvisivel");
 const btnVoltar = document.getElementById("btnVoltar");
 
 let modoCadastro = false;
@@ -423,9 +423,17 @@ btnAluno.addEventListener("click", () => {
   mostrarTelaLogin();
 });
 
-adminSecreto.addEventListener("click", () => {
-  tipoUsuario = "admin";
-  mostrarTelaLogin();
+let _adminCliques = 0;
+let _adminTimer = null;
+adminZonaInvisivel.addEventListener("click", () => {
+  _adminCliques++;
+  clearTimeout(_adminTimer);
+  _adminTimer = setTimeout(() => { _adminCliques = 0; }, 4000);
+  if (_adminCliques >= 5) {
+    _adminCliques = 0;
+    tipoUsuario = "admin";
+    mostrarTelaLogin();
+  }
 });
 
 btnVoltar.addEventListener("click", () => {
@@ -1674,47 +1682,100 @@ async function carregarProfessoresTurma(turma) {
     }
     
     const dataHoje = new Date().toLocaleDateString('pt-BR');
+    let modoEdicaoTurma = false;
     
-    professoresTurmaDiv.innerHTML = `
-      <table class="tabela-professores-turma">
-        <thead>
-          <tr>
-            <th>Professor</th>
-            <th>Matéria</th>
-            <th>Status</th>
-            <th>Data</th>
-            <th>Ação</th>
+    const wrapper = document.createElement('div');
+
+    const btnEditar = document.createElement('button');
+    btnEditar.className = 'btn-editar-prof';
+    btnEditar.style.cssText = 'width:auto;margin-bottom:12px;';
+    btnEditar.textContent = '✏️ Editar Nomes/Matérias';
+    wrapper.appendChild(btnEditar);
+
+    const tabela = document.createElement('table');
+    tabela.className = 'tabela-professores-turma';
+    tabela.id = 'tabelaProfTurma';
+    tabela.innerHTML = `
+      <thead>
+        <tr>
+          <th>Professor</th>
+          <th>Matéria</th>
+          <th>Status</th>
+          <th>Data</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${professores.map(prof => `
+          <tr data-id="${prof.id}">
+            <td class="pt-nome"><strong>${sanitizeHTML(prof.professor)}</strong></td>
+            <td class="pt-materia">${sanitizeHTML(prof.materia)}</td>
+            <td>
+              <span class="badge-status ${prof.status === 'Presente' ? 'badge-presente' : 'badge-ausente'}">
+                ${prof.status === 'Presente' ? '✅ Presente' : '❌ Falta'}
+              </span>
+            </td>
+            <td>${dataHoje}</td>
+            <td>
+              <button class="btn-toggle-status" data-id="${prof.id}" data-status="${prof.status}">
+                ${prof.status === 'Presente' ? 'Marcar Falta' : 'Marcar Presença'}
+              </button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          ${professores.map(prof => `
-            <tr>
-              <td><strong>${prof.professor}</strong></td>
-              <td>${prof.materia}</td>
-              <td>
-                <span class="badge-status ${prof.status === 'Presente' ? 'badge-presente' : 'badge-ausente'}">
-                  ${prof.status === 'Presente' ? '✅ Presente' : '❌ Falta'}
-                </span>
-              </td>
-              <td>${dataHoje}</td>
-              <td>
-                <button class="btn-toggle-status" data-id="${prof.id}" data-status="${prof.status}">
-                  ${prof.status === 'Presente' ? 'Marcar Falta' : 'Marcar Presença'}
-                </button>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
+        `).join('')}
+      </tbody>
     `;
-    
-    document.querySelectorAll('.btn-toggle-status').forEach(btn => {
+    wrapper.appendChild(tabela);
+    professoresTurmaDiv.innerHTML = '';
+    professoresTurmaDiv.appendChild(wrapper);
+
+    tabela.querySelectorAll('.btn-toggle-status').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const id = e.target.getAttribute('data-id');
         const statusAtual = e.target.getAttribute('data-status');
         const novoStatus = statusAtual === 'Presente' ? 'Falta' : 'Presente';
         await atualizarStatusProfessor(id, novoStatus, turma);
       });
+    });
+
+    btnEditar.addEventListener('click', async () => {
+      if (!modoEdicaoTurma) {
+        modoEdicaoTurma = true;
+        btnEditar.textContent = '💾 Salvar Alterações';
+        btnEditar.style.background = 'linear-gradient(135deg,#48bb78,#38a169)';
+        tabela.querySelectorAll('.pt-nome,.pt-materia').forEach(td => {
+          td.contentEditable = 'true';
+          td.style.border = '2px dashed var(--primary-color)';
+          td.style.padding = '8px';
+          td.style.cursor = 'text';
+          if (td.classList.contains('pt-nome')) {
+            const strong = td.querySelector('strong');
+            if (strong) { td.textContent = strong.textContent; }
+          }
+        });
+      } else {
+        btnEditar.disabled = true;
+        btnEditar.textContent = '⏳ Salvando...';
+        try {
+          const linhas = tabela.querySelectorAll('tr[data-id]');
+          for (const tr of linhas) {
+            const id = tr.dataset.id;
+            const professor = tr.querySelector('.pt-nome').textContent.trim();
+            const materia = tr.querySelector('.pt-materia').textContent.trim();
+            await adminFetch(`/api/professores-turma/${id}`, {
+              method: 'PUT',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ professor, materia })
+            });
+          }
+          showToast('Nomes e matérias atualizados!', 'success');
+          await carregarProfessoresTurma(turma);
+        } catch (err) {
+          showToast('Erro ao salvar alterações.', 'error');
+          btnEditar.disabled = false;
+          btnEditar.textContent = '💾 Salvar Alterações';
+        }
+      }
     });
     
   } catch (error) {
