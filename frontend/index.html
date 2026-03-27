@@ -15,7 +15,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
         <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="stylesheet" href="style.css?v=2026h">
+        <link rel="stylesheet" href="style.css?v=2026j">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -544,17 +544,6 @@
                 </div>
         </div>
 
-        <div id="modalConfirmar" class="modal-overlay hidden" style="display: none;">
-                <div class="modal-conteudo modal-confirmar">
-                        <div class="modal-confirmar-icone">⚠️</div>
-                        <h2 id="modalConfirmarTitulo">Confirmar ação</h2>
-                        <p id="modalConfirmarMensagem" class="modal-confirmar-texto"></p>
-                        <div class="modal-acoes">
-                                <button type="button" id="btnCancelarConfirmar" class="btn-modal-cancelar">Cancelar</button>
-                                <button type="button" id="btnOkConfirmar" class="btn-modal-excluir">Confirmar</button>
-                        </div>
-                </div>
-        </div>
 
         <div id="modalSelecionarTurma" class="modal-overlay hidden" style="display: none;">
                 <div class="modal-conteudo">
@@ -619,9 +608,22 @@
                 </div>
         </div>
 
+        <!-- Modal de Confirmação Customizado -->
+        <div id="modalConfirmar" class="modal-overlay hidden" style="display:none;">
+                <div class="modal-conteudo" style="max-width:320px; text-align:center; padding:28px 24px;">
+                        <div id="confirmarIcone" style="font-size:2.5rem; margin-bottom:10px;">⚠️</div>
+                        <p id="confirmarMensagem" style="font-size:1rem; color:var(--text-primary); font-weight:600; margin-bottom:6px; line-height:1.4;"></p>
+                        <p id="confirmarSub" style="font-size:0.85rem; color:var(--text-tertiary); margin-bottom:24px; line-height:1.4;"></p>
+                        <div style="display:flex; gap:10px;">
+                                <button id="btnConfirmarNao" style="flex:1; padding:11px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-secondary); font-size:0.9rem; font-weight:600; cursor:pointer; width:auto; height:auto; min-height:unset;">Cancelar</button>
+                                <button id="btnConfirmarSim" style="flex:1; padding:11px; border-radius:10px; border:none; background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; font-size:0.9rem; font-weight:700; cursor:pointer; width:auto; height:auto; min-height:unset;">Excluir</button>
+                        </div>
+                </div>
+        </div>
+
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026i"></script>
+        <script src="script.js?v=2026j"></script>
 </body>
 </html>

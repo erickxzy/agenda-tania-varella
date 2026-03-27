@@ -1406,14 +1406,59 @@ button:active {
     padding: 30px 20px;
   }
 
-  .tabela-alunos {
-    font-size: 0.85rem;
+  /* Tabela de alunos → cards no mobile */
+  .tabela-alunos thead { display: none; }
+
+  .tabela-alunos,
+  .tabela-alunos tbody,
+  .tabela-alunos tr,
+  .tabela-alunos td {
+    display: block;
+    width: 100%;
   }
 
-  .tabela-alunos th,
-  .tabela-alunos td {
-    padding: 10px 8px;
+  .tabela-alunos tr {
+    background: linear-gradient(135deg, var(--list-item-bg-start) 0%, var(--list-item-bg-end) 100%);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    border-left: 4px solid var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
+
+  .tabela-alunos td {
+    border: none;
+    padding: 3px 0;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+  }
+
+  .tabela-alunos td:first-child {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .tabela-alunos td:last-child {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tabela-alunos td::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    display: block;
+  }
+
+  .tabela-alunos td:first-child::before,
+  .tabela-alunos td:last-child::before { content: none; }
 
   .tabela-professores,
   .tabela-cardapio {

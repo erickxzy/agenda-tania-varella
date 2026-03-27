@@ -175,41 +175,6 @@ function showToast(message, type = 'info', title = '') {
   }, 5000);
 }
 
-function confirmarAcao(titulo, mensagem) {
-  return new Promise((resolve) => {
-    const modal = document.getElementById('modalConfirmar');
-    const tituloElement = document.getElementById('modalConfirmarTitulo');
-    const mensagemElement = document.getElementById('modalConfirmarMensagem');
-    const btnOk = document.getElementById('btnOkConfirmar');
-    const btnCancelar = document.getElementById('btnCancelarConfirmar');
-    
-    tituloElement.textContent = titulo;
-    mensagemElement.textContent = mensagem;
-    
-    modal.classList.remove('hidden');
-    modal.style.display = 'flex';
-    
-    const handleOk = () => {
-      cleanup();
-      resolve(true);
-    };
-    
-    const handleCancelar = () => {
-      cleanup();
-      resolve(false);
-    };
-    
-    const cleanup = () => {
-      modal.classList.add('hidden');
-      modal.style.display = 'none';
-      btnOk.removeEventListener('click', handleOk);
-      btnCancelar.removeEventListener('click', handleCancelar);
-    };
-    
-    btnOk.addEventListener('click', handleOk);
-    btnCancelar.addEventListener('click', handleCancelar);
-  });
-}
 
 
 const btnCriadores = document.getElementById('btnCriadores');
@@ -407,6 +372,36 @@ let modoCadastro = false;
 let usuarioAtual = null;
 let tipoUsuario = null;
 let tipoAdmin = 'direcao'; // 'admin' | 'direcao'
+
+// ══════════════════════════════════════════════════════════════
+// ─── MODAL DE CONFIRMAÇÃO CUSTOMIZADO ────────────────────────
+// ══════════════════════════════════════════════════════════════
+function confirmarAcao(mensagem, callback, { sub = 'Essa ação não pode ser desfeita.', icone = '🗑️', btnLabel = 'Excluir' } = {}) {
+  const modal = document.getElementById('modalConfirmar');
+  const elMsg = document.getElementById('confirmarMensagem');
+  const elSub = document.getElementById('confirmarSub');
+  const elIcone = document.getElementById('confirmarIcone');
+  const btnSim = document.getElementById('btnConfirmarSim');
+  const btnNao = document.getElementById('btnConfirmarNao');
+
+  elMsg.textContent = mensagem;
+  elSub.textContent = sub;
+  elIcone.textContent = icone;
+  btnSim.textContent = btnLabel;
+
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+
+  const fechar = () => {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    btnSim.onclick = null;
+    btnNao.onclick = null;
+  };
+
+  btnSim.onclick = () => { fechar(); callback(); };
+  btnNao.onclick = fechar;
+}
 
 function sanitizeHTML(str) {
   const div = document.createElement('div');
@@ -1097,9 +1092,9 @@ async function atualizarListaAlunos(){
     alunos.forEach(a => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${a.nome}</td>
-        <td>${a.email}</td>
-        <td>${a.serie}</td>
+        <td>${sanitizeHTML(a.nome)}</td>
+        <td data-label="E-mail">${sanitizeHTML(a.email)}</td>
+        <td data-label="Turma">${sanitizeHTML(a.serie)}</td>
         <td>
           <button class="btn-boletim" data-email="${a.email}" data-nome="${a.nome}" data-serie="${a.serie}">📋 Boletim</button>
           <button class="excluir" data-id="${a.id}" data-nome="${a.nome}">🗑️ Excluir</button>
@@ -1118,32 +1113,21 @@ async function atualizarListaAlunos(){
   }
 }
 
-async function excluirAluno(id, nome) {
-  const confirmado = await confirmarAcao(
-    '🗑️ Excluir Aluno',
-    `Tem certeza que deseja excluir o aluno "${nome}"?\n\nEsta ação não pode ser desfeita e o aluno perderá acesso ao sistema.`
-  );
-  
-  if (!confirmado) {
-    return;
-  }
-
-  try {
-    const res = await adminFetch(`/api/alunos/${id}`, {
-      method: 'DELETE'
-    });
-
-    const data = await res.json();
-
-    if (data.sucesso) {
-      showToast(data.mensagem, 'success');
-      atualizarListaAlunos();
-    } else {
-      showToast(data.erro || 'Erro ao excluir aluno.', 'error');
+function excluirAluno(id, nome) {
+  confirmarAcao(`Excluir o aluno "${nome}"?`, async () => {
+    try {
+      const res = await adminFetch(`/api/alunos/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.sucesso) {
+        showToast(data.mensagem || 'Aluno excluído.', 'success');
+        atualizarListaAlunos();
+      } else {
+        showToast(data.erro || 'Erro ao excluir aluno.', 'error');
+      }
+    } catch {
+      showToast('Erro ao excluir aluno. Tente novamente.', 'error');
     }
-  } catch (error) {
-    showToast('Erro ao excluir aluno. Tente novamente.', 'error');
-  }
+  });
 }
 
 async function atualizarEventosAdmin(){
@@ -2024,11 +2008,12 @@ document.getElementById('btnAdicionarProva')?.addEventListener('click', async ()
   } else { showToast(result.erro || 'Erro ao adicionar.', 'error'); }
 });
 
-async function deletarProva(id) {
-  if (!confirm('Excluir esta prova?')) return;
-  await adminFetch(`/api/provas/${id}`, { method: 'DELETE' });
-  showToast('Prova excluída.', 'success');
-  carregarProvasAdmin();
+function deletarProva(id) {
+  confirmarAcao('Excluir esta prova?', async () => {
+    await adminFetch(`/api/provas/${id}`, { method: 'DELETE' });
+    showToast('Prova excluída.', 'success');
+    carregarProvasAdmin();
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2103,11 +2088,12 @@ async function responderDuvida(id) {
   else { showToast(result.erro || 'Erro.', 'error'); }
 }
 
-async function deletarDuvida(id) {
-  if (!confirm('Excluir esta dúvida?')) return;
-  await adminFetch(`/api/duvidas/${id}`, { method: 'DELETE' });
-  showToast('Dúvida excluída.', 'success');
-  carregarDuvidasAdmin();
+function deletarDuvida(id) {
+  confirmarAcao('Excluir esta dúvida?', async () => {
+    await adminFetch(`/api/duvidas/${id}`, { method: 'DELETE' });
+    showToast('Dúvida excluída.', 'success');
+    carregarDuvidasAdmin();
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2202,11 +2188,12 @@ document.getElementById('btnAdicionarTarefa')?.addEventListener('click', async (
   } else { showToast(result.erro || 'Erro.', 'error'); }
 });
 
-async function deletarTarefa(id) {
-  if (!confirm('Excluir esta tarefa?')) return;
-  await adminFetch(`/api/tarefas/${id}`, { method: 'DELETE' });
-  showToast('Tarefa excluída.', 'success');
-  carregarTarefasAdmin();
+function deletarTarefa(id) {
+  confirmarAcao('Excluir esta tarefa?', async () => {
+    await adminFetch(`/api/tarefas/${id}`, { method: 'DELETE' });
+    showToast('Tarefa excluída.', 'success');
+    carregarTarefasAdmin();
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2326,11 +2313,12 @@ document.getElementById('btnCriarEnquete')?.addEventListener('click', async () =
   } else { showToast(result.erro || 'Erro.', 'error'); }
 });
 
-async function deletarEnquete(id) {
-  if (!confirm('Excluir esta enquete e todos os votos?')) return;
-  await adminFetch(`/api/enquetes/${id}`, { method: 'DELETE' });
-  showToast('Enquete excluída.', 'success');
-  carregarEnquetesAdmin();
+function deletarEnquete(id) {
+  confirmarAcao('Excluir esta enquete e todos os votos?', async () => {
+    await adminFetch(`/api/enquetes/${id}`, { method: 'DELETE' });
+    showToast('Enquete excluída.', 'success');
+    carregarEnquetesAdmin();
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
