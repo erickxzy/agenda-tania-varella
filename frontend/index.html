@@ -110,6 +110,30 @@
                         <h3>🍽️ Cardápio do Dia</h3>
                         <div id="cardapioDoDia" class="cardapio-dia"></div>
                 </div>
+
+                <div class="secao-painel">
+                        <h3>📝 Calendário de Provas</h3>
+                        <div id="provasAluno" class="feature-lista-aluno"></div>
+                </div>
+
+                <div class="secao-painel">
+                        <h3>✅ Minhas Tarefas</h3>
+                        <div id="tarefasAluno" class="feature-lista-aluno"></div>
+                </div>
+
+                <div class="secao-painel">
+                        <h3>💬 Dúvidas da Turma</h3>
+                        <div class="duvida-nova-form">
+                                <textarea id="novaDuvidaTexto" placeholder="Escreva sua dúvida aqui..." rows="2"></textarea>
+                                <button id="btnEnviarDuvida" class="btn-adicionar">Enviar Dúvida</button>
+                        </div>
+                        <div id="duvidasAluno" class="feature-lista-aluno"></div>
+                </div>
+
+                <div class="secao-painel">
+                        <h3>📊 Enquetes da Turma</h3>
+                        <div id="enquetesAluno" class="feature-lista-aluno"></div>
+                </div>
         </div>
 
         <div id="adminPanel" class="card painel-admin hidden">
@@ -142,6 +166,22 @@
                         <button class="btn-categoria" data-secao="professores">
                                 <span class="categoria-icone">👨‍🏫</span>
                                 <span class="categoria-texto">Professores</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="provas">
+                                <span class="categoria-icone">📝</span>
+                                <span class="categoria-texto">Provas</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="duvidas">
+                                <span class="categoria-icone">💬</span>
+                                <span class="categoria-texto">Dúvidas</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="tarefas">
+                                <span class="categoria-icone">✅</span>
+                                <span class="categoria-texto">Tarefas</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="enquetes">
+                                <span class="categoria-icone">📊</span>
+                                <span class="categoria-texto">Enquetes</span>
                         </button>
                 </div>
 
@@ -190,6 +230,95 @@
                                 </select>
                                 <div id="professoresTurma" class="professores-turma-lista"></div>
                         </div>
+                </div>
+
+                <!-- ── SEÇÃO PROVAS (ADMIN) ── -->
+                <div id="secao-provas" class="admin-secao hidden">
+                        <h3>📝 Calendário de Provas</h3>
+                        <div class="nova-feature-form">
+                                <input type="text" id="provaTitulo" placeholder="Título (ex: Prova de Matemática)">
+                                <input type="text" id="provaMateria" placeholder="Matéria">
+                                <input type="text" id="provaDescricao" placeholder="Descrição (opcional)">
+                                <input type="date" id="provaData">
+                                <select id="provaTurma">
+                                        <option value="">Selecione a turma</option>
+                                        <option value="Todas">Todas as Turmas</option>
+                                        <option value="1A">1º Ano - Turma A</option><option value="1B">1º Ano - Turma B</option>
+                                        <option value="1C">1º Ano - Turma C</option><option value="1D">1º Ano - Turma D</option>
+                                        <option value="2A">2º Ano - Turma A</option><option value="2B">2º Ano - Turma B</option>
+                                        <option value="2C">2º Ano - Turma C</option>
+                                        <option value="3A">3º Ano - Turma A</option><option value="3B">3º Ano - Turma B</option>
+                                        <option value="3C">3º Ano - Turma C</option>
+                                </select>
+                                <button id="btnAdicionarProva" class="btn-adicionar">+ Adicionar Prova/Trabalho</button>
+                        </div>
+                        <div id="listaProvasAdmin" class="feature-lista"></div>
+                </div>
+
+                <!-- ── SEÇÃO DÚVIDAS (ADMIN) ── -->
+                <div id="secao-duvidas" class="admin-secao hidden">
+                        <h3>💬 Dúvidas dos Alunos</h3>
+                        <div style="margin-bottom:12px;">
+                                <select id="filtroTurmaDuvidas">
+                                        <option value="">Todas as Turmas</option>
+                                        <option value="1A">1º Ano A</option><option value="1B">1º Ano B</option>
+                                        <option value="1C">1º Ano C</option><option value="1D">1º Ano D</option>
+                                        <option value="2A">2º Ano A</option><option value="2B">2º Ano B</option>
+                                        <option value="2C">2º Ano C</option>
+                                        <option value="3A">3º Ano A</option><option value="3B">3º Ano B</option>
+                                        <option value="3C">3º Ano C</option>
+                                </select>
+                                <button onclick="carregarDuvidasAdmin()" class="btn-adicionar" style="margin-left:8px;">Filtrar</button>
+                        </div>
+                        <div id="listaDuvidasAdmin" class="feature-lista"></div>
+                </div>
+
+                <!-- ── SEÇÃO TAREFAS (ADMIN) ── -->
+                <div id="secao-tarefas" class="admin-secao hidden">
+                        <h3>✅ Controle de Tarefas</h3>
+                        <div class="nova-feature-form">
+                                <input type="text" id="tarefaTitulo" placeholder="Título da tarefa">
+                                <input type="text" id="tarefaMateria" placeholder="Matéria">
+                                <textarea id="tarefaDescricao" placeholder="Descrição (opcional)" rows="2" style="resize:vertical;"></textarea>
+                                <select id="tarefaTurma">
+                                        <option value="">Selecione a turma</option>
+                                        <option value="Todas">Todas as Turmas</option>
+                                        <option value="1A">1º Ano - Turma A</option><option value="1B">1º Ano - Turma B</option>
+                                        <option value="1C">1º Ano - Turma C</option><option value="1D">1º Ano - Turma D</option>
+                                        <option value="2A">2º Ano - Turma A</option><option value="2B">2º Ano - Turma B</option>
+                                        <option value="2C">2º Ano - Turma C</option>
+                                        <option value="3A">3º Ano - Turma A</option><option value="3B">3º Ano - Turma B</option>
+                                        <option value="3C">3º Ano - Turma C</option>
+                                </select>
+                                <input type="date" id="tarefaPrazo">
+                                <button id="btnAdicionarTarefa" class="btn-adicionar">+ Adicionar Tarefa</button>
+                        </div>
+                        <div id="listaTarefasAdmin" class="feature-lista"></div>
+                </div>
+
+                <!-- ── SEÇÃO ENQUETES (ADMIN) ── -->
+                <div id="secao-enquetes" class="admin-secao hidden">
+                        <h3>📊 Enquetes Rápidas</h3>
+                        <div class="nova-feature-form">
+                                <input type="text" id="enquetePergunta" placeholder="Pergunta da enquete">
+                                <select id="enqueteTurma">
+                                        <option value="">Selecione a turma</option>
+                                        <option value="Todas">Todas as Turmas</option>
+                                        <option value="1A">1º Ano - Turma A</option><option value="1B">1º Ano - Turma B</option>
+                                        <option value="1C">1º Ano - Turma C</option><option value="1D">1º Ano - Turma D</option>
+                                        <option value="2A">2º Ano - Turma A</option><option value="2B">2º Ano - Turma B</option>
+                                        <option value="2C">2º Ano - Turma C</option>
+                                        <option value="3A">3º Ano - Turma A</option><option value="3B">3º Ano - Turma B</option>
+                                        <option value="3C">3º Ano - Turma C</option>
+                                </select>
+                                <div id="opcoesEnquete">
+                                        <input type="text" class="opcao-enquete-input" placeholder="Opção 1">
+                                        <input type="text" class="opcao-enquete-input" placeholder="Opção 2">
+                                </div>
+                                <button onclick="adicionarOpcaoEnquete()" style="background:none;border:1px dashed var(--border-color);color:var(--primary-color);padding:8px;border-radius:8px;cursor:pointer;width:100%;">+ Adicionar opção</button>
+                                <button id="btnCriarEnquete" class="btn-adicionar">+ Criar Enquete</button>
+                        </div>
+                        <div id="listaEnquetesAdmin" class="feature-lista"></div>
                 </div>
         </div>
 

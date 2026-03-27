@@ -845,6 +845,155 @@ app.get('/api/estatisticas', async (req, res) => {
         }
 });
 
+// ════════════════════════════════════════════════════════
+// ─── CALENDÁRIO DE PROVAS ────────────────────────────────
+// ════════════════════════════════════════════════════════
+app.get('/api/provas', async (req, res) => {
+        const { turma } = req.query;
+        let query = supabase.from('provas').select('*').order('data', { ascending: true });
+        if (turma) query = query.eq('turma', turma);
+        const { data, error } = await query;
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json(data || []);
+});
+
+app.post('/api/provas', async (req, res) => {
+        const { titulo, materia, descricao, data, turma, criado_por } = req.body;
+        if (!titulo || !materia || !data || !turma) return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
+        const { data: novo, error } = await supabase.from('provas').insert({ titulo, materia, descricao, data, turma, criado_por }).select().single();
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true, prova: novo });
+});
+
+app.delete('/api/provas/:id', async (req, res) => {
+        const { error } = await supabase.from('provas').delete().eq('id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true });
+});
+
+// ════════════════════════════════════════════════════════
+// ─── CHAT DE DÚVIDAS ─────────────────────────────────────
+// ════════════════════════════════════════════════════════
+app.get('/api/duvidas', async (req, res) => {
+        const { turma } = req.query;
+        let query = supabase.from('duvidas').select('*').order('created_at', { ascending: false });
+        if (turma) query = query.eq('turma', turma);
+        const { data, error } = await query;
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json(data || []);
+});
+
+app.post('/api/duvidas', async (req, res) => {
+        const { pergunta, aluno_nome, aluno_email, turma } = req.body;
+        if (!pergunta || !aluno_nome || !turma) return res.status(400).json({ erro: 'Dados incompletos.' });
+        const { data: nova, error } = await supabase.from('duvidas').insert({ pergunta, aluno_nome, aluno_email, turma }).select().single();
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true, duvida: nova });
+});
+
+app.put('/api/duvidas/:id/resposta', async (req, res) => {
+        const { resposta, respondido_por } = req.body;
+        if (!resposta) return res.status(400).json({ erro: 'Resposta não pode ser vazia.' });
+        const { error } = await supabase.from('duvidas').update({ resposta, respondido_por, respondido_at: new Date().toISOString() }).eq('id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true });
+});
+
+app.delete('/api/duvidas/:id', async (req, res) => {
+        const { error } = await supabase.from('duvidas').delete().eq('id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true });
+});
+
+// ════════════════════════════════════════════════════════
+// ─── CONTROLE DE TAREFAS ─────────────────────────────────
+// ════════════════════════════════════════════════════════
+app.get('/api/tarefas', async (req, res) => {
+        const { turma } = req.query;
+        let query = supabase.from('tarefas').select('*').order('prazo', { ascending: true });
+        if (turma) query = query.eq('turma', turma);
+        const { data, error } = await query;
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json(data || []);
+});
+
+app.post('/api/tarefas', async (req, res) => {
+        const { titulo, descricao, materia, turma, prazo, criado_por } = req.body;
+        if (!titulo || !materia || !turma || !prazo) return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
+        const { data: nova, error } = await supabase.from('tarefas').insert({ titulo, descricao, materia, turma, prazo, criado_por }).select().single();
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true, tarefa: nova });
+});
+
+app.post('/api/tarefas/:id/concluir', async (req, res) => {
+        const { aluno_email, aluno_nome } = req.body;
+        const tarefa_id = Number(req.params.id);
+        const { data: jaFeita } = await supabase.from('tarefas_concluidas').select('id').eq('tarefa_id', tarefa_id).eq('aluno_email', aluno_email).single();
+        if (jaFeita) {
+                await supabase.from('tarefas_concluidas').delete().eq('tarefa_id', tarefa_id).eq('aluno_email', aluno_email);
+                return res.json({ sucesso: true, concluida: false });
+        }
+        await supabase.from('tarefas_concluidas').insert({ tarefa_id, aluno_email, aluno_nome });
+        res.json({ sucesso: true, concluida: true });
+});
+
+app.get('/api/tarefas/concluidas/:email', async (req, res) => {
+        const { data, error } = await supabase.from('tarefas_concluidas').select('tarefa_id').eq('aluno_email', req.params.email);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json((data || []).map(t => t.tarefa_id));
+});
+
+app.delete('/api/tarefas/:id', async (req, res) => {
+        await supabase.from('tarefas_concluidas').delete().eq('tarefa_id', req.params.id);
+        const { error } = await supabase.from('tarefas').delete().eq('id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true });
+});
+
+// ════════════════════════════════════════════════════════
+// ─── ENQUETES RÁPIDAS ────────────────────────────────────
+// ════════════════════════════════════════════════════════
+app.get('/api/enquetes', async (req, res) => {
+        const { turma } = req.query;
+        let query = supabase.from('enquetes').select('*').order('created_at', { ascending: false });
+        if (turma) query = query.eq('turma', turma);
+        const { data, error } = await query;
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json(data || []);
+});
+
+app.post('/api/enquetes', async (req, res) => {
+        const { pergunta, opcoes, turma, criado_por } = req.body;
+        if (!pergunta || !opcoes || opcoes.length < 2 || !turma) return res.status(400).json({ erro: 'Preencha todos os campos. Mínimo 2 opções.' });
+        const { data: nova, error } = await supabase.from('enquetes').insert({ pergunta, opcoes, turma, criado_por, ativa: true }).select().single();
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true, enquete: nova });
+});
+
+app.post('/api/enquetes/:id/votar', async (req, res) => {
+        const { opcao, aluno_email } = req.body;
+        const enquete_id = Number(req.params.id);
+        const { data: jaVotou } = await supabase.from('votos').select('id').eq('enquete_id', enquete_id).eq('aluno_email', aluno_email).single();
+        if (jaVotou) return res.status(400).json({ erro: 'Você já votou nesta enquete.' });
+        await supabase.from('votos').insert({ enquete_id, opcao, aluno_email });
+        res.json({ sucesso: true });
+});
+
+app.get('/api/enquetes/:id/resultados', async (req, res) => {
+        const { data: votos, error } = await supabase.from('votos').select('opcao').eq('enquete_id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
+        const contagem = {};
+        (votos || []).forEach(v => { contagem[v.opcao] = (contagem[v.opcao] || 0) + 1; });
+        res.json({ total: votos.length, contagem });
+});
+
+app.delete('/api/enquetes/:id', async (req, res) => {
+        await supabase.from('votos').delete().eq('enquete_id', req.params.id);
+        const { error } = await supabase.from('enquetes').delete().eq('id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
         console.log(`✅ Servidor rodando na porta ${PORT}`);
         console.log(`☁️  Banco de dados: Supabase`);
