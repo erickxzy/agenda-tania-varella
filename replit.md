@@ -47,6 +47,8 @@ projeto/
 | `tarefas_concluidas` | Tarefas marcadas como feitas     |
 | `enquetes`        | Enquetes rápidas por turma          |
 | `votos`           | Votos dos alunos nas enquetes       |
+| `boletins`        | Boletins e observações por aluno    |
+| `mensagens`       | Mensagens diretas Direção ↔ Aluno   |
 
 ## Funcionalidades
 

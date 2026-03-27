@@ -15,7 +15,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
         <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="stylesheet" href="style.css?v=2026k">
+        <link rel="stylesheet" href="style.css?v=2026m">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -153,6 +153,16 @@
                         <p style="font-size:0.8rem; color:var(--text-tertiary); margin-bottom:10px;">Boletins e observações enviadas pela direção</p>
                         <div id="boletinsAluno" class="feature-lista-aluno"></div>
                 </div>
+
+                <div class="secao-painel">
+                        <h3>💬 Minhas Mensagens <span id="badgeMsgAluno" class="badge-msg-aluno hidden"></span></h3>
+                        <p style="font-size:0.8rem; color:var(--text-tertiary); margin-bottom:10px;">Mensagens enviadas pela direção — você também pode responder</p>
+                        <div id="mensagensAlunoContainer" class="mensagens-container"></div>
+                        <div class="mensagem-resposta-form" id="formRespostaAluno" style="display:none;">
+                                <textarea id="textoRespostaAluno" placeholder="Digite sua resposta..." rows="2"></textarea>
+                                <button id="btnEnviarRespostaAluno" class="btn-adicionar">📤 Enviar Resposta</button>
+                        </div>
+                </div>
         </div>
 
         <div id="adminPanel" class="card painel-admin hidden">
@@ -201,6 +211,14 @@
                         <button class="btn-categoria" data-secao="enquetes">
                                 <span class="categoria-icone">📊</span>
                                 <span class="categoria-texto">Enquetes</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="destaques">
+                                <span class="categoria-icone">🏆</span>
+                                <span class="categoria-texto">Destaques</span>
+                        </button>
+                        <button class="btn-categoria" data-secao="mensagens">
+                                <span class="categoria-icone">💬</span>
+                                <span class="categoria-texto">Mensagens</span>
                         </button>
                 </div>
 
@@ -338,6 +356,34 @@
                                 <button id="btnCriarEnquete" class="btn-adicionar">+ Criar Enquete</button>
                         </div>
                         <div id="listaEnquetesAdmin" class="feature-lista"></div>
+                </div>
+
+                <!-- ── SEÇÃO DESTAQUES / RANKING (ADMIN) ── -->
+                <div id="secao-destaques" class="admin-secao hidden">
+                        <h3>🏆 Alunos Destaque — Ranking de Tarefas</h3>
+                        <p style="font-size:0.85rem; color:var(--text-tertiary); margin-bottom:14px;">Ranking gerado automaticamente pelas tarefas concluídas. Selecione a turma para ver.</p>
+                        <div style="margin-bottom:14px;">
+                                <select id="rankingTurmaAdmin">
+                                        <option value="">Selecione a turma</option>
+                                        <option value="1A">1º Ano A</option><option value="1B">1º Ano B</option>
+                                        <option value="1C">1º Ano C</option><option value="1D">1º Ano D</option>
+                                        <option value="2A">2º Ano A</option><option value="2B">2º Ano B</option>
+                                        <option value="2C">2º Ano C</option>
+                                        <option value="3A">3º Ano A</option><option value="3B">3º Ano B</option>
+                                        <option value="3C">3º Ano C</option>
+                                </select>
+                                <button id="btnCarregarRankingAdmin" class="btn-adicionar" style="margin-left:8px;">Ver Ranking</button>
+                        </div>
+                        <div id="rankingAdminContainer"></div>
+                </div>
+
+                <!-- ── SEÇÃO MENSAGENS (ADMIN) ── -->
+                <div id="secao-mensagens" class="admin-secao hidden">
+                        <h3>💬 Mensagens Diretas</h3>
+                        <p style="font-size:0.85rem; color:var(--text-tertiary); margin-bottom:14px;">Selecione um aluno na aba Turmas e clique em "💬 Mensagem" para iniciar conversa.</p>
+                        <div id="mensagensAdminContainer">
+                                <p style="color:var(--text-tertiary); text-align:center; padding:20px;">Selecione um aluno para ver as mensagens.</p>
+                        </div>
                 </div>
         </div>
 
@@ -608,6 +654,52 @@
                 </div>
         </div>
 
+        <!-- Modal Editar Aluno -->
+        <div id="modalEditarAluno" class="modal-overlay hidden" style="display:none;">
+                <div class="modal-conteudo">
+                        <h2>✏️ Editar Aluno</h2>
+                        <p id="subtituloEditarAluno" style="color:var(--text-secondary); margin-bottom:15px; text-align:center; font-size:0.9rem;"></p>
+                        <form id="formEditarAluno">
+                                <label>Nome completo:</label>
+                                <input type="text" id="editAlunoNome" placeholder="Nome do aluno">
+                                <label>E-mail (@escola.pr.gov.br):</label>
+                                <input type="email" id="editAlunoEmail" placeholder="email@escola.pr.gov.br">
+                                <label>Turma:</label>
+                                <select id="editAlunoSerie">
+                                        <option value="">Manter turma atual</option>
+                                        <option value="1A">1º Ano - Turma A</option>
+                                        <option value="1B">1º Ano - Turma B</option>
+                                        <option value="1C">1º Ano - Turma C</option>
+                                        <option value="1D">1º Ano - Turma D</option>
+                                        <option value="2A">2º Ano - Turma A</option>
+                                        <option value="2B">2º Ano - Turma B</option>
+                                        <option value="2C">2º Ano - Turma C</option>
+                                        <option value="3A">3º Ano - Turma A</option>
+                                        <option value="3B">3º Ano - Turma B</option>
+                                        <option value="3C">3º Ano - Turma C</option>
+                                </select>
+                                <label>Nova senha (deixe em branco para não alterar):</label>
+                                <input type="password" id="editAlunoSenha" placeholder="Nova senha (mín. 6 caracteres)" autocomplete="new-password">
+                                <button type="submit" class="btn-fechar-modal" style="width:100%; margin-top:15px;">💾 Salvar Alterações</button>
+                        </form>
+                        <button id="btnFecharEditarAluno" class="btn-fechar-modal" style="background:var(--text-tertiary); margin-top:8px;">Cancelar</button>
+                        <p id="editAlunoMsg" style="margin-top:10px; text-align:center; font-size:0.9rem;"></p>
+                </div>
+        </div>
+
+        <!-- Modal Mensagem Direta (Admin → Aluno) -->
+        <div id="modalMensagem" class="modal-overlay hidden" style="display:none;">
+                <div class="modal-conteudo">
+                        <h2>💬 Enviar Mensagem</h2>
+                        <p id="subtituloMensagem" style="color:var(--text-secondary); margin-bottom:15px; text-align:center; font-size:0.9rem;"></p>
+                        <div id="histMensagens" class="mensagens-container" style="max-height:280px; overflow-y:auto; margin-bottom:14px;"></div>
+                        <textarea id="textoMensagemAdmin" placeholder="Digite a mensagem para o aluno..." rows="3" style="width:100%; resize:vertical;"></textarea>
+                        <button id="btnEnviarMensagemAdmin" class="btn-fechar-modal" style="width:100%; margin-top:12px;">📤 Enviar Mensagem</button>
+                        <button id="btnFecharMensagem" class="btn-fechar-modal" style="background:var(--text-tertiary); margin-top:8px;">Fechar</button>
+                        <p id="mensagemModalMsg" style="margin-top:8px; text-align:center; font-size:0.9rem;"></p>
+                </div>
+        </div>
+
         <!-- Modal de Confirmação Customizado -->
         <div id="modalConfirmar" class="modal-overlay hidden" style="display:none;">
                 <div class="modal-conteudo" style="max-width:320px; text-align:center; padding:28px 24px;">
@@ -624,6 +716,6 @@
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026k"></script>
+        <script src="script.js?v=2026m"></script>
 </body>
 </html>

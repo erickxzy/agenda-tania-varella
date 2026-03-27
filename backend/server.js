@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const compression = require('compression');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
@@ -35,6 +36,38 @@ const pendentesVerificacao = new Map();
 // Armazenamento temporário de logins pendentes de verificação (expira em 10 min)
 const loginsPendentes = new Map(); // email → { userData, codigo, expires, tipo }
 
+// ── PROTEÇÃO CONTRA FORÇA BRUTA ───────────────────────────────────────────────
+const tentativasLogin = new Map(); // email → { count, bloqueadoAte }
+const MAX_TENTATIVAS = 5;
+const BLOQUEIO_MS = 15 * 60 * 1000; // 15 minutos
+
+function verificarBloqueio(email) {
+        const reg = tentativasLogin.get(email);
+        if (!reg) return null;
+        if (reg.bloqueadoAte && Date.now() < reg.bloqueadoAte) {
+                const mins = Math.ceil((reg.bloqueadoAte - Date.now()) / 60000);
+                return `Muitas tentativas incorretas. Aguarde ${mins} minuto(s) para tentar novamente.`;
+        }
+        if (reg.bloqueadoAte && Date.now() >= reg.bloqueadoAte) {
+                tentativasLogin.delete(email);
+        }
+        return null;
+}
+
+function registrarFalhaLogin(email) {
+        const reg = tentativasLogin.get(email) || { count: 0, bloqueadoAte: null };
+        reg.count += 1;
+        if (reg.count >= MAX_TENTATIVAS) {
+                reg.bloqueadoAte = Date.now() + BLOQUEIO_MS;
+                reg.count = 0;
+        }
+        tentativasLogin.set(email, reg);
+}
+
+function limparFalhasLogin(email) {
+        tentativasLogin.delete(email);
+}
+
 // ── SESSÕES DE ADMINISTRADOR ─────────────────────────────────────────────────
 const adminSessions = new Map(); // token -> { nome, email, expires }
 
@@ -68,8 +101,12 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, '../frontend')));
+app.use(compression());
+app.use(express.json({ limit: '2mb' }));
+app.use(express.static(path.join(__dirname, '../frontend'), {
+        maxAge: '1h',
+        etag: true
+}));
 app.get('/favicon.ico', (req, res) => res.redirect('/favicon.svg'));
 
 // Tabelas Supabase:
@@ -450,6 +487,9 @@ app.post('/api/cadastrar-direcao', async (req, res) => {
 app.post('/api/login', async (req, res) => {
         const { email, senha } = req.body;
 
+        const bloqueio = verificarBloqueio(email);
+        if (bloqueio) return res.status(429).json({ sucesso: false, erro: bloqueio });
+
         const { data: aluno } = await supabase
                 .from('Cadastro_Aluno')
                 .select('*')
@@ -457,6 +497,7 @@ app.post('/api/login', async (req, res) => {
                 .single();
 
         if (!aluno) {
+                registrarFalhaLogin(email);
                 return res.status(400).json({ sucesso: false, erro: 'E-mail ou senha incorretos!' });
         }
 
@@ -469,8 +510,10 @@ app.post('/api/login', async (req, res) => {
 
         const senhaValida = bcrypt.compareSync(senha, aluno.senha);
         if (!senhaValida) {
+                registrarFalhaLogin(email);
                 return res.status(400).json({ sucesso: false, erro: 'E-mail ou senha incorretos!' });
         }
+        limparFalhasLogin(email);
 
         // Admin: gera token de sessão diretamente, sem código de verificação
         if (aluno.email === 'admin@sistema.local') {
@@ -570,6 +613,9 @@ app.post('/api/reenviar-codigo-login', async (req, res) => {
 app.post('/api/login-direcao', async (req, res) => {
         const { email, senha } = req.body;
 
+        const bloqueio = verificarBloqueio('dir_' + email);
+        if (bloqueio) return res.status(429).json({ sucesso: false, erro: bloqueio });
+
         const { data: membro } = await supabase
                 .from('Login_Direção')
                 .select('*')
@@ -577,13 +623,16 @@ app.post('/api/login-direcao', async (req, res) => {
                 .single();
 
         if (!membro) {
+                registrarFalhaLogin('dir_' + email);
                 return res.status(400).json({ sucesso: false, erro: 'E-mail ou senha incorretos!' });
         }
 
         const senhaValida = bcrypt.compareSync(senha, membro['Senha']);
         if (!senhaValida) {
+                registrarFalhaLogin('dir_' + email);
                 return res.status(400).json({ sucesso: false, erro: 'E-mail ou senha incorretos!' });
         }
+        limparFalhasLogin('dir_' + email);
 
         const nomeMembro = membro.nome || email.split('@')[0];
 
@@ -725,6 +774,38 @@ app.get('/api/alunos', async (req, res) => {
 
         if (error) return res.status(500).json({ sucesso: false, erro: 'Erro ao buscar alunos.' });
         res.json(data);
+});
+
+app.put('/api/alunos/:id', requireAdminAuth, async (req, res) => {
+        const { id } = req.params;
+        const { nome, email, serie, novaSenha } = req.body;
+
+        const { data: aluno } = await supabase
+                .from('Cadastro_Aluno')
+                .select('email')
+                .eq('id', id)
+                .single();
+
+        if (!aluno) return res.status(404).json({ sucesso: false, erro: 'Aluno não encontrado.' });
+        if (aluno.email === 'admin@sistema.local') return res.status(403).json({ sucesso: false, erro: 'Não é possível editar o administrador.' });
+
+        const updates = {};
+        if (nome && nome.trim()) updates.nome = nome.trim();
+        if (email && email.includes('@')) updates.email = email.trim().toLowerCase();
+        if (serie) {
+                const turmasValidas = ['1A','1B','1C','1D','2A','2B','2C','3A','3B','3C'];
+                if (!turmasValidas.includes(serie)) return res.status(400).json({ sucesso: false, erro: 'Turma inválida.' });
+                updates.serie = serie;
+        }
+        if (novaSenha && novaSenha.length >= 6) {
+                updates.senha = bcrypt.hashSync(novaSenha, 10);
+        }
+
+        if (Object.keys(updates).length === 0) return res.status(400).json({ sucesso: false, erro: 'Nenhum campo para atualizar.' });
+
+        const { error } = await supabase.from('Cadastro_Aluno').update(updates).eq('id', id);
+        if (error) return res.status(500).json({ sucesso: false, erro: 'Erro ao atualizar aluno: ' + error.message });
+        res.json({ sucesso: true, mensagem: 'Aluno atualizado com sucesso!' });
 });
 
 app.delete('/api/alunos/:id', requireAdminAuth, async (req, res) => {
@@ -1264,6 +1345,90 @@ app.delete('/api/enquetes/:id', requireAdminAuth, async (req, res) => {
         await supabase.from('votos').delete().eq('enquete_id', req.params.id);
         const { error } = await supabase.from('enquetes').delete().eq('id', req.params.id);
         if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true });
+});
+
+// ════════════════════════════════════════════════════════
+// ─── MENSAGENS DIRETAS ───────────────────────────────────
+// ════════════════════════════════════════════════════════
+// Tabela: mensagens (id, de_email, de_nome, de_tipo, para_email, para_nome, mensagem, lida, created_at)
+
+app.post('/api/mensagens', requireAdminAuth, async (req, res) => {
+        const { para_email, para_nome, mensagem } = req.body;
+        if (!para_email || !mensagem || !mensagem.trim()) {
+                return res.status(400).json({ sucesso: false, erro: 'Destinatário e mensagem são obrigatórios.' });
+        }
+        const { error } = await supabase.from('mensagens').insert({
+                de_email: req.adminInfo.email,
+                de_nome: req.adminInfo.nome,
+                de_tipo: req.adminInfo.tipo || 'direcao',
+                para_email,
+                para_nome: para_nome || para_email,
+                mensagem: mensagem.trim(),
+                lida: false
+        });
+        if (error) return res.status(500).json({ sucesso: false, erro: 'Erro ao enviar mensagem: ' + error.message });
+        res.json({ sucesso: true, mensagem: 'Mensagem enviada!' });
+});
+
+app.post('/api/mensagens/aluno', async (req, res) => {
+        const { de_email, de_nome, para_email, para_nome, mensagem } = req.body;
+        if (!de_email || !para_email || !mensagem || !mensagem.trim()) {
+                return res.status(400).json({ sucesso: false, erro: 'Dados incompletos.' });
+        }
+        if (!de_email.endsWith('@escola.pr.gov.br')) {
+                return res.status(403).json({ sucesso: false, erro: 'Não autorizado.' });
+        }
+        const { error } = await supabase.from('mensagens').insert({
+                de_email,
+                de_nome: de_nome || de_email,
+                de_tipo: 'aluno',
+                para_email,
+                para_nome: para_nome || para_email,
+                mensagem: mensagem.trim(),
+                lida: false
+        });
+        if (error) return res.status(500).json({ sucesso: false, erro: 'Erro ao enviar mensagem: ' + error.message });
+        res.json({ sucesso: true, mensagem: 'Mensagem enviada!' });
+});
+
+app.get('/api/mensagens/aluno/:email', async (req, res) => {
+        const { email } = req.params;
+        const { data, error } = await supabase
+                .from('mensagens')
+                .select('*')
+                .or(`para_email.eq.${email},de_email.eq.${email}`)
+                .order('created_at', { ascending: true });
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json(data || []);
+});
+
+app.get('/api/mensagens/admin/:email', requireAdminAuth, async (req, res) => {
+        const { email } = req.params;
+        const { data, error } = await supabase
+                .from('mensagens')
+                .select('*')
+                .or(`para_email.eq.${email},de_email.eq.${email}`)
+                .order('created_at', { ascending: true });
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json(data || []);
+});
+
+app.get('/api/mensagens/nao-lidas/:email', async (req, res) => {
+        const { data, error } = await supabase
+                .from('mensagens')
+                .select('id')
+                .eq('para_email', req.params.email)
+                .eq('lida', false);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ total: (data || []).length });
+});
+
+app.patch('/api/mensagens/marcar-lidas/:email', async (req, res) => {
+        await supabase.from('mensagens')
+                .update({ lida: true })
+                .eq('para_email', req.params.email)
+                .eq('lida', false);
         res.json({ sucesso: true });
 });
 

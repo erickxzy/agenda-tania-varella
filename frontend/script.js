@@ -541,6 +541,7 @@ loginForm.addEventListener("submit", async e => {
           usuarioAtual = data.usuario;
           if(data.token) sessionStorage.setItem('adminToken', data.token);
           tipoAdmin = 'admin';
+          window._adminEmail = 'admin@sistema.local';
           mostrarPainelAdmin();
         } else {
           showToast(data.erro || 'Erro ao fazer login', 'error');
@@ -690,6 +691,7 @@ formVerificacaoCadastro.addEventListener('submit', async e => {
         if (tipo === 'direcao') {
           if (data.token) sessionStorage.setItem('adminToken', data.token);
           tipoAdmin = 'direcao';
+          window._adminEmail = data.usuario?.email || '';
           mostrarPainelAdmin();
           showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Login Realizado');
         } else {
@@ -802,6 +804,7 @@ async function logarAluno(email,senha){
       usuarioAtual = data.usuario;
       if(data.token) sessionStorage.setItem('adminToken', data.token);
       tipoAdmin = data.tipoAdmin || 'admin';
+      window._adminEmail = data.usuario?.email || 'admin@sistema.local';
       mostrarPainelAdmin();
       showToast('Bem-vindo, ' + data.usuario.nome + '!', 'success', 'Login Realizado');
     } else {
@@ -902,6 +905,8 @@ async function mostrarPainelAluno(aluno){
   carregarEnquetesAluno(aluno);
   carregarRankingTarefas(aluno.serie);
   carregarBoletinsAluno(aluno);
+  verificarMensagensNaoLidas(aluno.email);
+  carregarMensagensAluno(aluno);
 
   document.getElementById('btnEnviarDuvida').onclick = () => enviarDuvidaAluno(aluno);
 }
@@ -1087,12 +1092,16 @@ async function atualizarListaAlunos(){
           <span class="aluno-card-turma">Turma: <strong>${sanitizeHTML(a.serie)}</strong></span>
         </div>
         <div class="aluno-card-acoes">
-          <button class="btn-boletim-card">📋 Boletim</button>
-          <button class="btn-excluir-card">🗑️ Excluir</button>
+          <button class="btn-msg-card">💬</button>
+          <button class="btn-editar-card">✏️</button>
+          <button class="btn-boletim-card">📋</button>
+          <button class="btn-excluir-card">🗑️</button>
         </div>
       `;
       cards.appendChild(card);
 
+      card.querySelector('.btn-msg-card').addEventListener('click', () => abrirModalMensagem({ email: a.email, nome: a.nome }));
+      card.querySelector('.btn-editar-card').addEventListener('click', () => abrirModalEditarAluno(a));
       card.querySelector('.btn-boletim-card').addEventListener('click', () => abrirModalBoletim({ email: a.email, nome: a.nome, serie: a.serie }));
       card.querySelector('.btn-excluir-card').addEventListener('click', () => excluirAluno(a.id, a.nome));
     });
@@ -1116,6 +1125,262 @@ function excluirAluno(id, nome) {
       showToast('Erro ao excluir aluno. Tente novamente.', 'error');
     }
   });
+}
+
+// ══════════════════════════════════════════════════════════════
+// ─── EDITAR ALUNO (MODAL) ─────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+let alunoEditandoId = null;
+
+function abrirModalEditarAluno(aluno) {
+  alunoEditandoId = aluno.id;
+  document.getElementById('editAlunoNome').value = aluno.nome || '';
+  document.getElementById('editAlunoEmail').value = aluno.email || '';
+  document.getElementById('editAlunoSerie').value = '';
+  document.getElementById('editAlunoSenha').value = '';
+  document.getElementById('editAlunoMsg').textContent = '';
+  document.getElementById('subtituloEditarAluno').textContent = `Editando: ${aluno.nome} — Turma ${aluno.serie || ''}`;
+  const modal = document.getElementById('modalEditarAluno');
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+}
+
+document.getElementById('btnFecharEditarAluno').addEventListener('click', () => {
+  const modal = document.getElementById('modalEditarAluno');
+  modal.classList.add('hidden');
+  modal.style.display = 'none';
+  alunoEditandoId = null;
+});
+
+document.getElementById('formEditarAluno').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!alunoEditandoId) return;
+  const nome = document.getElementById('editAlunoNome').value.trim();
+  const email = document.getElementById('editAlunoEmail').value.trim();
+  const serie = document.getElementById('editAlunoSerie').value;
+  const novaSenha = document.getElementById('editAlunoSenha').value;
+  const msg = document.getElementById('editAlunoMsg');
+
+  if (novaSenha && novaSenha.length < 6) {
+    msg.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
+    msg.style.color = 'red';
+    return;
+  }
+
+  const body = {};
+  if (nome) body.nome = nome;
+  if (email) body.email = email;
+  if (serie) body.serie = serie;
+  if (novaSenha) body.novaSenha = novaSenha;
+
+  try {
+    const res = await adminFetch(`/api/alunos/${alunoEditandoId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      showToast(data.mensagem || 'Aluno atualizado!', 'success');
+      document.getElementById('modalEditarAluno').classList.add('hidden');
+      document.getElementById('modalEditarAluno').style.display = 'none';
+      alunoEditandoId = null;
+      atualizarListaAlunos();
+    } else {
+      msg.textContent = data.erro || 'Erro ao atualizar.';
+      msg.style.color = 'red';
+    }
+  } catch {
+    msg.textContent = 'Erro de conexão. Tente novamente.';
+    msg.style.color = 'red';
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// ─── MENSAGENS DIRETAS (ADMIN) ────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+let mensagemAlunoAtual = null;
+
+function formatarDataMsg(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const diaSem = dias[d.getDay()];
+  const data = d.toLocaleDateString('pt-BR');
+  const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return `${diaSem}, ${data} às ${hora}`;
+}
+
+function renderBolhaMensagem(msg, emailLogado) {
+  const minha = msg.de_email === emailLogado;
+  const lado = minha ? 'msg-direita' : 'msg-esquerda';
+  const quem = minha ? 'Você' : sanitizeHTML(msg.de_nome || msg.de_email);
+  return `
+    <div class="msg-bolha ${lado}">
+      <span class="msg-remetente">${quem}</span>
+      <p class="msg-texto">${sanitizeHTML(msg.mensagem)}</p>
+      <span class="msg-data">${formatarDataMsg(msg.created_at)}</span>
+    </div>`;
+}
+
+async function abrirModalMensagem(aluno) {
+  mensagemAlunoAtual = aluno;
+  document.getElementById('subtituloMensagem').textContent = `Conversa com: ${aluno.nome}`;
+  document.getElementById('textoMensagemAdmin').value = '';
+  document.getElementById('mensagemModalMsg').textContent = '';
+  const modal = document.getElementById('modalMensagem');
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  await carregarHistoricoMensagens(aluno.email);
+}
+
+async function carregarHistoricoMensagens(alunoEmail) {
+  const hist = document.getElementById('histMensagens');
+  hist.innerHTML = '<p style="text-align:center; color:var(--text-tertiary); font-size:0.85rem;">Carregando...</p>';
+  try {
+    const res = await adminFetch(`/api/mensagens/admin/${encodeURIComponent(alunoEmail)}`);
+    const msgs = await res.json();
+    const emailAdmin = document.getElementById('adminPanel') ? (window._adminEmail || '') : '';
+    if (!msgs.length) {
+      hist.innerHTML = '<p style="text-align:center; color:var(--text-tertiary); font-size:0.85rem;">Nenhuma mensagem ainda. Inicie a conversa!</p>';
+      return;
+    }
+    hist.innerHTML = msgs.map(m => renderBolhaMensagem(m, window._adminEmail || '')).join('');
+    hist.scrollTop = hist.scrollHeight;
+  } catch {
+    hist.innerHTML = '<p style="color:red; text-align:center;">Erro ao carregar mensagens.</p>';
+  }
+}
+
+document.getElementById('btnEnviarMensagemAdmin').addEventListener('click', async () => {
+  if (!mensagemAlunoAtual) return;
+  const texto = document.getElementById('textoMensagemAdmin').value.trim();
+  const msgEl = document.getElementById('mensagemModalMsg');
+  if (!texto) { msgEl.textContent = 'Digite uma mensagem.'; msgEl.style.color = 'red'; return; }
+  try {
+    const res = await adminFetch('/api/mensagens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ para_email: mensagemAlunoAtual.email, para_nome: mensagemAlunoAtual.nome, mensagem: texto })
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      document.getElementById('textoMensagemAdmin').value = '';
+      msgEl.textContent = '';
+      await carregarHistoricoMensagens(mensagemAlunoAtual.email);
+    } else {
+      msgEl.textContent = data.erro || 'Erro ao enviar.';
+      msgEl.style.color = 'red';
+    }
+  } catch {
+    msgEl.textContent = 'Erro de conexão.';
+    msgEl.style.color = 'red';
+  }
+});
+
+document.getElementById('btnFecharMensagem').addEventListener('click', () => {
+  document.getElementById('modalMensagem').classList.add('hidden');
+  document.getElementById('modalMensagem').style.display = 'none';
+  mensagemAlunoAtual = null;
+});
+
+// ══════════════════════════════════════════════════════════════
+// ─── RANKING ADMIN (DESTAQUES) ────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+document.getElementById('btnCarregarRankingAdmin').addEventListener('click', async () => {
+  const turma = document.getElementById('rankingTurmaAdmin').value;
+  const container = document.getElementById('rankingAdminContainer');
+  if (!turma) { showToast('Selecione uma turma.', 'error'); return; }
+  container.innerHTML = '<p style="color:var(--text-tertiary);">Carregando ranking...</p>';
+  try {
+    const res = await fetch(`/api/ranking/${encodeURIComponent(turma)}`);
+    const ranking = await res.json();
+    if (!ranking.length) {
+      container.innerHTML = '<p style="color:var(--text-tertiary); text-align:center;">Nenhuma tarefa concluída nesta turma ainda.</p>';
+      return;
+    }
+    const medalhas = ['🥇', '🥈', '🥉'];
+    container.innerHTML = `
+      <p style="font-size:0.85rem; color:var(--text-tertiary); margin-bottom:8px;">Turma ${turma} — ${ranking.length} aluno(s) com tarefas concluídas</p>
+      <ul class="ranking-lista">${ranking.map((item, i) => `
+        <li class="ranking-item ${i < 3 ? 'pos-' + (i + 1) : ''}">
+          <span class="ranking-posicao">${medalhas[i] || (i + 1) + 'º'}</span>
+          <span class="ranking-nome">${sanitizeHTML(item.nome)}</span>
+          <span class="ranking-total">${item.total} ✅</span>
+        </li>`).join('')}
+      </ul>`;
+  } catch {
+    container.innerHTML = '<p style="color:red;">Erro ao carregar ranking.</p>';
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// ─── MENSAGENS DO ALUNO (PAINEL ALUNO) ───────────────────────
+// ══════════════════════════════════════════════════════════════
+async function carregarMensagensAluno(aluno) {
+  const container = document.getElementById('mensagensAlunoContainer');
+  const formResposta = document.getElementById('formRespostaAluno');
+  if (!container) return;
+  container.innerHTML = '<p style="color:var(--text-tertiary); font-size:0.85rem; text-align:center;">Carregando...</p>';
+
+  try {
+    await fetch(`/api/mensagens/marcar-lidas/${encodeURIComponent(aluno.email)}`, { method: 'PATCH' });
+    const badge = document.getElementById('badgeMsgAluno');
+    if (badge) { badge.textContent = ''; badge.classList.add('hidden'); }
+
+    const res = await fetch(`/api/mensagens/aluno/${encodeURIComponent(aluno.email)}`);
+    const msgs = await res.json();
+
+    if (!msgs.length) {
+      container.innerHTML = '<p style="color:var(--text-tertiary); font-size:0.85rem; text-align:center;">Nenhuma mensagem ainda.</p>';
+      if (formResposta) formResposta.style.display = 'none';
+      return;
+    }
+
+    container.innerHTML = msgs.map(m => renderBolhaMensagem(m, aluno.email)).join('');
+    container.scrollTop = container.scrollHeight;
+    if (formResposta) formResposta.style.display = 'block';
+
+    const btnEnviar = document.getElementById('btnEnviarRespostaAluno');
+    if (btnEnviar) {
+      btnEnviar.onclick = async () => {
+        const texto = document.getElementById('textoRespostaAluno').value.trim();
+        if (!texto) return;
+        const ultimaMsg = msgs[msgs.length - 1];
+        const paraEmail = ultimaMsg.de_tipo === 'aluno' ? ultimaMsg.para_email : ultimaMsg.de_email;
+        const paraNome = ultimaMsg.de_tipo === 'aluno' ? ultimaMsg.para_nome : ultimaMsg.de_nome;
+        try {
+          const r = await fetch('/api/mensagens/aluno', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ de_email: aluno.email, de_nome: aluno.nome, para_email: paraEmail, para_nome: paraNome, mensagem: texto })
+          });
+          const d = await r.json();
+          if (d.sucesso) {
+            document.getElementById('textoRespostaAluno').value = '';
+            showToast('Resposta enviada!', 'success');
+            await carregarMensagensAluno(aluno);
+          } else {
+            showToast(d.erro || 'Erro ao enviar.', 'error');
+          }
+        } catch { showToast('Erro de conexão.', 'error'); }
+      };
+    }
+  } catch {
+    container.innerHTML = '<p style="color:red; font-size:0.85rem; text-align:center;">Erro ao carregar mensagens.</p>';
+  }
+}
+
+async function verificarMensagensNaoLidas(email) {
+  try {
+    const res = await fetch(`/api/mensagens/nao-lidas/${encodeURIComponent(email)}`);
+    const data = await res.json();
+    const badge = document.getElementById('badgeMsgAluno');
+    if (badge && data.total > 0) {
+      badge.textContent = data.total;
+      badge.classList.remove('hidden');
+    }
+  } catch {}
 }
 
 async function atualizarEventosAdmin(){
