@@ -399,6 +399,12 @@ let modoCadastro = false;
 let usuarioAtual = null;
 let tipoUsuario = null;
 
+function sanitizeHTML(str) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(String(str || '')));
+  return div.innerHTML;
+}
+
 btnDirecao.addEventListener("click", () => {
   tipoUsuario = "direcao";
   mostrarTelaLogin();
@@ -1790,11 +1796,11 @@ async function carregarProvasAluno(serie) {
       const passado = diasRestantes < 0;
       return `<div class="feature-card ${urgente ? 'urgente' : ''} ${passado ? 'passado' : ''}">
         <div class="feature-card-header">
-          <span class="feature-materia">${p.materia}</span>
+          <span class="feature-materia">${sanitizeHTML(p.materia)}</span>
           <span class="feature-data">${dt.toLocaleDateString('pt-BR')}</span>
         </div>
-        <div class="feature-titulo">${p.titulo}</div>
-        ${p.descricao ? `<div class="feature-desc">${p.descricao}</div>` : ''}
+        <div class="feature-titulo">${sanitizeHTML(p.titulo)}</div>
+        ${p.descricao ? `<div class="feature-desc">${sanitizeHTML(p.descricao)}</div>` : ''}
         <div class="feature-badge ${passado ? 'badge-passado' : urgente ? 'badge-urgente' : 'badge-ok'}">
           ${passado ? 'Passou' : diasRestantes === 0 ? 'Hoje!' : `${diasRestantes} dia(s)`}
         </div>
@@ -1806,20 +1812,23 @@ async function carregarProvasAluno(serie) {
 async function carregarProvasAdmin() {
   const container = document.getElementById('listaProvasAdmin');
   container.innerHTML = '<p>Carregando...</p>';
-  const res = await fetch('/api/provas');
-  const provas = await res.json();
-  if (!provas.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma prova cadastrada.</p>'; return; }
-  container.innerHTML = provas.map(p => {
-    const dt = new Date(p.data + 'T12:00:00');
-    return `<div class="feature-card admin-item">
-      <div class="feature-card-header">
-        <span><strong>${p.titulo}</strong> — ${p.materia}</span>
-        <span>${dt.toLocaleDateString('pt-BR')} | Turma: ${p.turma}</span>
-      </div>
-      ${p.descricao ? `<div class="feature-desc">${p.descricao}</div>` : ''}
-      <button onclick="deletarProva(${p.id})" class="btn-excluir-feature">🗑 Excluir</button>
-    </div>`;
-  }).join('');
+  try {
+    const res = await fetch('/api/provas');
+    if (!res.ok) throw new Error('Falha na requisição');
+    const provas = await res.json();
+    if (!provas.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma prova cadastrada.</p>'; return; }
+    container.innerHTML = provas.map(p => {
+      const dt = new Date(p.data + 'T12:00:00');
+      return `<div class="feature-card admin-item">
+        <div class="feature-card-header">
+          <span><strong>${sanitizeHTML(p.titulo)}</strong> — ${sanitizeHTML(p.materia)}</span>
+          <span>${dt.toLocaleDateString('pt-BR')} | Turma: ${sanitizeHTML(p.turma)}</span>
+        </div>
+        ${p.descricao ? `<div class="feature-desc">${sanitizeHTML(p.descricao)}</div>` : ''}
+        <button onclick="deletarProva(${p.id})" class="btn-excluir-feature">🗑 Excluir</button>
+      </div>`;
+    }).join('');
+  } catch { container.innerHTML = '<p class="feature-vazia">Erro ao carregar provas. Tente novamente.</p>'; }
 }
 
 document.getElementById('btnAdicionarProva')?.addEventListener('click', async () => {
@@ -1862,11 +1871,11 @@ async function carregarDuvidasAluno(serie) {
     container.innerHTML = duvidas.map(d => `
       <div class="duvida-card ${d.resposta ? 'respondida' : ''}">
         <div class="duvida-header">
-          <span class="duvida-autor">👤 ${d.aluno_nome}</span>
+          <span class="duvida-autor">👤 ${sanitizeHTML(d.aluno_nome)}</span>
           <span class="duvida-data">${new Date(d.created_at).toLocaleDateString('pt-BR')}</span>
         </div>
-        <div class="duvida-pergunta">❓ ${d.pergunta}</div>
-        ${d.resposta ? `<div class="duvida-resposta"><strong>📌 Professor:</strong> ${d.resposta}</div>` : '<div class="duvida-aguardando">⏳ Aguardando resposta...</div>'}
+        <div class="duvida-pergunta">❓ ${sanitizeHTML(d.pergunta)}</div>
+        ${d.resposta ? `<div class="duvida-resposta"><strong>📌 Professor:</strong> ${sanitizeHTML(d.resposta)}</div>` : '<div class="duvida-aguardando">⏳ Aguardando resposta...</div>'}
       </div>`).join('');
   } catch { container.innerHTML = '<p class="feature-vazia">Erro ao carregar dúvidas.</p>'; }
 }
@@ -1888,25 +1897,28 @@ async function carregarDuvidasAdmin() {
   const container = document.getElementById('listaDuvidasAdmin');
   const turma = document.getElementById('filtroTurmaDuvidas').value;
   container.innerHTML = '<p>Carregando...</p>';
-  const url = turma ? `/api/duvidas?turma=${encodeURIComponent(turma)}` : '/api/duvidas';
-  const res = await fetch(url);
-  const duvidas = await res.json();
-  if (!duvidas.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma dúvida encontrada.</p>'; return; }
-  container.innerHTML = duvidas.map(d => `
-    <div class="duvida-card admin-item ${d.resposta ? 'respondida' : ''}">
-      <div class="duvida-header">
-        <span><strong>${d.aluno_nome}</strong> — Turma ${d.turma}</span>
-        <span>${new Date(d.created_at).toLocaleDateString('pt-BR')}</span>
-      </div>
-      <div class="duvida-pergunta">❓ ${d.pergunta}</div>
-      ${d.resposta
-        ? `<div class="duvida-resposta"><strong>Resposta:</strong> ${d.resposta}</div>`
-        : `<div style="display:flex;gap:8px;margin-top:8px;">
-            <input type="text" id="resp-${d.id}" placeholder="Digite a resposta..." style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--input-bg);color:var(--text-primary);">
-            <button onclick="responderDuvida(${d.id})" class="btn-adicionar" style="white-space:nowrap;">Responder</button>
-           </div>`}
-      <button onclick="deletarDuvida(${d.id})" class="btn-excluir-feature" style="margin-top:4px;">🗑 Excluir</button>
-    </div>`).join('');
+  try {
+    const url = turma ? `/api/duvidas?turma=${encodeURIComponent(turma)}` : '/api/duvidas';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Falha na requisição');
+    const duvidas = await res.json();
+    if (!duvidas.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma dúvida encontrada.</p>'; return; }
+    container.innerHTML = duvidas.map(d => `
+      <div class="duvida-card admin-item ${d.resposta ? 'respondida' : ''}">
+        <div class="duvida-header">
+          <span><strong>${sanitizeHTML(d.aluno_nome)}</strong> — Turma ${sanitizeHTML(d.turma)}</span>
+          <span>${new Date(d.created_at).toLocaleDateString('pt-BR')}</span>
+        </div>
+        <div class="duvida-pergunta">❓ ${sanitizeHTML(d.pergunta)}</div>
+        ${d.resposta
+          ? `<div class="duvida-resposta"><strong>Resposta:</strong> ${sanitizeHTML(d.resposta)}</div>`
+          : `<div style="display:flex;gap:8px;margin-top:8px;">
+              <input type="text" id="resp-${d.id}" placeholder="Digite a resposta..." style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--input-bg);color:var(--text-primary);">
+              <button onclick="responderDuvida(${d.id})" class="btn-adicionar" style="white-space:nowrap;">Responder</button>
+             </div>`}
+        <button onclick="deletarDuvida(${d.id})" class="btn-excluir-feature" style="margin-top:4px;">🗑 Excluir</button>
+      </div>`).join('');
+  } catch { container.innerHTML = '<p class="feature-vazia">Erro ao carregar dúvidas. Tente novamente.</p>'; }
 }
 
 async function responderDuvida(id) {
@@ -1948,21 +1960,24 @@ async function carregarTarefasAluno(aluno) {
       const concluida = tarefasConcluidas.includes(t.id);
       return `<div class="feature-card tarefa-card ${concluida ? 'concluida' : ''}" id="tarefa-${t.id}">
         <div class="feature-card-header">
-          <span class="feature-materia">${t.materia}</span>
+          <span class="feature-materia">${sanitizeHTML(t.materia)}</span>
           <span class="feature-data">Prazo: ${dt.toLocaleDateString('pt-BR')}</span>
         </div>
-        <div class="feature-titulo">${t.titulo}</div>
-        ${t.descricao ? `<div class="feature-desc">${t.descricao}</div>` : ''}
+        <div class="feature-titulo">${sanitizeHTML(t.titulo)}</div>
+        ${t.descricao ? `<div class="feature-desc">${sanitizeHTML(t.descricao)}</div>` : ''}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
           <span class="feature-badge ${diasRestantes < 0 ? 'badge-passado' : diasRestantes <= 2 ? 'badge-urgente' : 'badge-ok'}">
             ${diasRestantes < 0 ? 'Atrasada' : diasRestantes === 0 ? 'Hoje!' : `${diasRestantes} dia(s)`}
           </span>
-          <button onclick="alternarTarefa(${t.id}, '${aluno.email}', '${aluno.nome}', '${aluno.serie}')" class="btn-concluir ${concluida ? 'concluida' : ''}">
+          <button class="btn-concluir ${concluida ? 'concluida' : ''}" data-tid="${t.id}">
             ${concluida ? '✅ Feita' : '⬜ Marcar como feita'}
           </button>
         </div>
       </div>`;
     }).join('');
+    container.querySelectorAll('.btn-concluir').forEach(btn => {
+      btn.addEventListener('click', () => alternarTarefa(Number(btn.dataset.tid), aluno.email, aluno.nome, aluno.serie));
+    });
   } catch(e) { container.innerHTML = '<p class="feature-vazia">Erro ao carregar tarefas.</p>'; }
 }
 
@@ -1978,20 +1993,23 @@ async function alternarTarefa(tarefaId, email, nome, serie) {
 async function carregarTarefasAdmin() {
   const container = document.getElementById('listaTarefasAdmin');
   container.innerHTML = '<p>Carregando...</p>';
-  const res = await fetch('/api/tarefas');
-  const tarefas = await res.json();
-  if (!tarefas.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma tarefa cadastrada.</p>'; return; }
-  container.innerHTML = tarefas.map(t => {
-    const dt = new Date(t.prazo + 'T12:00:00');
-    return `<div class="feature-card admin-item">
-      <div class="feature-card-header">
-        <span><strong>${t.titulo}</strong> — ${t.materia}</span>
-        <span>Prazo: ${dt.toLocaleDateString('pt-BR')} | Turma: ${t.turma}</span>
-      </div>
-      ${t.descricao ? `<div class="feature-desc">${t.descricao}</div>` : ''}
-      <button onclick="deletarTarefa(${t.id})" class="btn-excluir-feature">🗑 Excluir</button>
-    </div>`;
-  }).join('');
+  try {
+    const res = await fetch('/api/tarefas');
+    if (!res.ok) throw new Error('Falha na requisição');
+    const tarefas = await res.json();
+    if (!tarefas.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma tarefa cadastrada.</p>'; return; }
+    container.innerHTML = tarefas.map(t => {
+      const dt = new Date(t.prazo + 'T12:00:00');
+      return `<div class="feature-card admin-item">
+        <div class="feature-card-header">
+          <span><strong>${sanitizeHTML(t.titulo)}</strong> — ${sanitizeHTML(t.materia)}</span>
+          <span>Prazo: ${dt.toLocaleDateString('pt-BR')} | Turma: ${sanitizeHTML(t.turma)}</span>
+        </div>
+        ${t.descricao ? `<div class="feature-desc">${sanitizeHTML(t.descricao)}</div>` : ''}
+        <button onclick="deletarTarefa(${t.id})" class="btn-excluir-feature">🗑 Excluir</button>
+      </div>`;
+    }).join('');
+  } catch { container.innerHTML = '<p class="feature-vazia">Erro ao carregar tarefas. Tente novamente.</p>'; }
 }
 
 document.getElementById('btnAdicionarTarefa')?.addEventListener('click', async () => {
@@ -2046,14 +2064,14 @@ async function carregarEnquetesAluno(aluno) {
     for (const e of enquetes) {
       const resultados = await fetch(`/api/enquetes/${e.id}/resultados`).then(r => r.json());
       const total = resultados.total || 0;
-      html += `<div class="enquete-card">
-        <div class="enquete-pergunta">📊 ${e.pergunta}</div>
-        <div class="enquete-opcoes" id="opcoes-${e.id}">
+      html += `<div class="enquete-card" data-eid="${e.id}">
+        <div class="enquete-pergunta">📊 ${sanitizeHTML(e.pergunta)}</div>
+        <div class="enquete-opcoes">
           ${e.opcoes.map(op => {
             const votos = resultados.contagem[op] || 0;
             const pct = total > 0 ? Math.round((votos / total) * 100) : 0;
             return `<div class="enquete-opcao">
-              <button onclick="votarEnquete(${e.id}, '${op.replace(/'/g,"\\'")}', '${aluno.email}', '${aluno.serie}')" class="btn-opcao-enquete">${op}</button>
+              <button class="btn-opcao-enquete" data-eid="${e.id}" data-opcao="${encodeURIComponent(op)}">${sanitizeHTML(op)}</button>
               <div class="barra-resultado"><div class="barra-fill" style="width:${pct}%"></div></div>
               <span class="pct-resultado">${pct}% (${votos})</span>
             </div>`;
@@ -2063,6 +2081,14 @@ async function carregarEnquetesAluno(aluno) {
       </div>`;
     }
     container.innerHTML = html;
+    container.querySelectorAll('.btn-opcao-enquete').forEach(btn => {
+      btn.addEventListener('click', () => votarEnquete(
+        Number(btn.dataset.eid),
+        decodeURIComponent(btn.dataset.opcao),
+        aluno.email,
+        aluno.serie
+      ));
+    });
   } catch(e) { container.innerHTML = '<p class="feature-vazia">Erro ao carregar enquetes.</p>'; }
 }
 
@@ -2079,33 +2105,36 @@ async function votarEnquete(enqueteId, opcao, email, serie) {
 async function carregarEnquetesAdmin() {
   const container = document.getElementById('listaEnquetesAdmin');
   container.innerHTML = '<p>Carregando...</p>';
-  const res = await fetch('/api/enquetes');
-  const enquetes = await res.json();
-  if (!enquetes.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma enquete cadastrada.</p>'; return; }
-  let html = '';
-  for (const e of enquetes) {
-    const resultados = await fetch(`/api/enquetes/${e.id}/resultados`).then(r => r.json());
-    const total = resultados.total || 0;
-    html += `<div class="feature-card admin-item">
-      <div class="feature-card-header">
-        <span><strong>${e.pergunta}</strong></span>
-        <span>Turma: ${e.turma} | ${total} voto(s)</span>
-      </div>
-      <div style="margin-top:8px;">
-        ${e.opcoes.map(op => {
-          const votos = resultados.contagem[op] || 0;
-          const pct = total > 0 ? Math.round((votos / total) * 100) : 0;
-          return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;">
-            <span style="min-width:120px;font-size:0.9rem;">${op}</span>
-            <div class="barra-resultado" style="flex:1;"><div class="barra-fill" style="width:${pct}%"></div></div>
-            <span style="font-size:0.85rem;color:var(--text-secondary)">${pct}% (${votos})</span>
-          </div>`;
-        }).join('')}
-      </div>
-      <button onclick="deletarEnquete(${e.id})" class="btn-excluir-feature" style="margin-top:8px;">🗑 Excluir</button>
-    </div>`;
-  }
-  container.innerHTML = html;
+  try {
+    const res = await fetch('/api/enquetes');
+    if (!res.ok) throw new Error('Falha na requisição');
+    const enquetes = await res.json();
+    if (!enquetes.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma enquete cadastrada.</p>'; return; }
+    let html = '';
+    for (const e of enquetes) {
+      const resultados = await fetch(`/api/enquetes/${e.id}/resultados`).then(r => r.json()).catch(() => ({ total: 0, contagem: {} }));
+      const total = resultados.total || 0;
+      html += `<div class="feature-card admin-item">
+        <div class="feature-card-header">
+          <span><strong>${sanitizeHTML(e.pergunta)}</strong></span>
+          <span>Turma: ${sanitizeHTML(e.turma)} | ${total} voto(s)</span>
+        </div>
+        <div style="margin-top:8px;">
+          ${e.opcoes.map(op => {
+            const votos = resultados.contagem[op] || 0;
+            const pct = total > 0 ? Math.round((votos / total) * 100) : 0;
+            return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;">
+              <span style="min-width:120px;font-size:0.9rem;">${sanitizeHTML(op)}</span>
+              <div class="barra-resultado" style="flex:1;"><div class="barra-fill" style="width:${pct}%"></div></div>
+              <span style="font-size:0.85rem;color:var(--text-secondary)">${pct}% (${votos})</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <button onclick="deletarEnquete(${e.id})" class="btn-excluir-feature" style="margin-top:8px;">🗑 Excluir</button>
+      </div>`;
+    }
+    container.innerHTML = html;
+  } catch { container.innerHTML = '<p class="feature-vazia">Erro ao carregar enquetes. Tente novamente.</p>'; }
 }
 
 document.getElementById('btnCriarEnquete')?.addEventListener('click', async () => {

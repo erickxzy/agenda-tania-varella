@@ -2499,6 +2499,11 @@ body.dark-mode .logo-serie {
   color: var(--primary-color);
 }
 
+.duvida-data {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
+
 .duvida-pergunta {
   font-size: 0.95rem;
   color: var(--text-primary);

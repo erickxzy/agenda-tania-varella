@@ -866,6 +866,8 @@ app.post('/api/provas', async (req, res) => {
 });
 
 app.delete('/api/provas/:id', async (req, res) => {
+        const { data: existe } = await supabase.from('provas').select('id').eq('id', req.params.id).single();
+        if (!existe) return res.status(404).json({ erro: 'Prova não encontrada.' });
         const { error } = await supabase.from('provas').delete().eq('id', req.params.id);
         if (error) return res.status(500).json({ erro: error.message });
         res.json({ sucesso: true });
@@ -885,7 +887,7 @@ app.get('/api/duvidas', async (req, res) => {
 
 app.post('/api/duvidas', async (req, res) => {
         const { pergunta, aluno_nome, aluno_email, turma } = req.body;
-        if (!pergunta || !aluno_nome || !turma) return res.status(400).json({ erro: 'Dados incompletos.' });
+        if (!pergunta || !aluno_nome || !aluno_email || !turma) return res.status(400).json({ erro: 'Dados incompletos. Faça login novamente.' });
         const { data: nova, error } = await supabase.from('duvidas').insert({ pergunta, aluno_nome, aluno_email, turma }).select().single();
         if (error) return res.status(500).json({ erro: error.message });
         res.json({ sucesso: true, duvida: nova });
@@ -944,6 +946,8 @@ app.get('/api/tarefas/concluidas/:email', async (req, res) => {
 });
 
 app.delete('/api/tarefas/:id', async (req, res) => {
+        const { data: existe } = await supabase.from('tarefas').select('id').eq('id', req.params.id).single();
+        if (!existe) return res.status(404).json({ erro: 'Tarefa não encontrada.' });
         await supabase.from('tarefas_concluidas').delete().eq('tarefa_id', req.params.id);
         const { error } = await supabase.from('tarefas').delete().eq('id', req.params.id);
         if (error) return res.status(500).json({ erro: error.message });
