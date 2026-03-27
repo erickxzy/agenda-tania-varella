@@ -2046,7 +2046,6 @@ async function carregarEnquetesAluno(aluno) {
     for (const e of enquetes) {
       const resultados = await fetch(`/api/enquetes/${e.id}/resultados`).then(r => r.json());
       const total = resultados.total || 0;
-      const jaVotouCheck = await fetch(`/api/votos/verificar?enquete_id=${e.id}&email=${encodeURIComponent(aluno.email)}`).catch(() => ({ json: () => ({ votou: false }) }));
       html += `<div class="enquete-card">
         <div class="enquete-pergunta">📊 ${e.pergunta}</div>
         <div class="enquete-opcoes" id="opcoes-${e.id}">

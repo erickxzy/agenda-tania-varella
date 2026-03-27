@@ -41,6 +41,12 @@ projeto/
 | `Avisos`          | Avisos e atividades                 |
 | `recuperacao_senha` | Recuperação de senha              |
 | `Logs`            | Logs de login dos alunos            |
+| `provas`          | Calendário de provas/trabalhos      |
+| `duvidas`         | Dúvidas dos alunos por turma        |
+| `tarefas`         | Tarefas com prazo de entrega        |
+| `tarefas_concluidas` | Tarefas marcadas como feitas     |
+| `enquetes`        | Enquetes rápidas por turma          |
+| `votos`           | Votos dos alunos nas enquetes       |
 
 ## Funcionalidades
 
@@ -51,6 +57,10 @@ projeto/
 - Avisos e atividades (Quizizz, Khan Academy, Redação Paraná)
 - Sistema de notificações
 - Tema claro/escuro
+- **Calendário de Provas** — visualiza provas da turma com contagem regressiva
+- **Chat de Dúvidas** — envia dúvidas e vê respostas do professor
+- **Controle de Tarefas** — vê tarefas e marca como concluídas
+- **Enquetes Rápidas** — vota em enquetes e vê resultados em tempo real
 
 ### Para Administração
 - Painel administrativo completo
@@ -59,6 +69,10 @@ projeto/
 - Controle de presença/falta de professores por turma
 - Gerenciamento de avisos e atividades
 - Visualização e exclusão de alunos cadastrados
+- **Provas** — cadastra provas/trabalhos por turma e data
+- **Dúvidas** — visualiza e responde dúvidas dos alunos
+- **Tarefas** — cria tarefas com prazo de entrega por turma
+- **Enquetes** — cria enquetes com múltiplas opções e vê resultados
 
 ## Turmas
 1A, 1B, 1C, 1D, 2A, 2B, 2C, 3A, 3B, 3C
