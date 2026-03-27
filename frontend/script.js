@@ -1074,39 +1074,27 @@ async function atualizarListaAlunos(){
       return;
     }
 
-    container.innerHTML = `
-      <table class="tabela-alunos">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>E-mail</th>
-            <th>Turma</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="tabelaAlunosBody"></tbody>
-      </table>
-    `;
+    container.innerHTML = '<div class="alunos-cards" id="alunosCards"></div>';
+    const cards = document.getElementById("alunosCards");
 
-    const tbody = document.getElementById("tabelaAlunosBody");
     alunos.forEach(a => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${sanitizeHTML(a.nome)}</td>
-        <td data-label="E-mail">${sanitizeHTML(a.email)}</td>
-        <td data-label="Turma">${sanitizeHTML(a.serie)}</td>
-        <td>
-          <button class="btn-boletim" data-email="${a.email}" data-nome="${a.nome}" data-serie="${a.serie}">📋 Boletim</button>
-          <button class="excluir" data-id="${a.id}" data-nome="${a.nome}">🗑️ Excluir</button>
-        </td>
+      const card = document.createElement("div");
+      card.className = "aluno-card";
+      card.innerHTML = `
+        <div class="aluno-card-info">
+          <span class="aluno-card-nome">${sanitizeHTML(a.nome)}</span>
+          <span class="aluno-card-email">${sanitizeHTML(a.email)}</span>
+          <span class="aluno-card-turma">Turma: <strong>${sanitizeHTML(a.serie)}</strong></span>
+        </div>
+        <div class="aluno-card-acoes">
+          <button class="btn-boletim-card">📋 Boletim</button>
+          <button class="btn-excluir-card">🗑️ Excluir</button>
+        </div>
       `;
-      tbody.appendChild(tr);
+      cards.appendChild(card);
 
-      const btnBoletimAluno = tr.querySelector('.btn-boletim');
-      btnBoletimAluno.addEventListener('click', () => abrirModalBoletim({ email: a.email, nome: a.nome, serie: a.serie }));
-      
-      const btnExcluir = tr.querySelector('.excluir');
-      btnExcluir.addEventListener('click', () => excluirAluno(a.id, a.nome));
+      card.querySelector('.btn-boletim-card').addEventListener('click', () => abrirModalBoletim({ email: a.email, nome: a.nome, serie: a.serie }));
+      card.querySelector('.btn-excluir-card').addEventListener('click', () => excluirAluno(a.id, a.nome));
     });
   } catch(error) {
     container.innerHTML="<p>Erro ao carregar alunos</p>";

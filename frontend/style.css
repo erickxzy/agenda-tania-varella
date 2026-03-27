@@ -2726,6 +2726,104 @@ body.dark-mode .logo-serie {
   text-align: right;
 }
 
+/* ── CARDS DE ALUNOS (substitui tabela) ─────────────────── */
+.alunos-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.aluno-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, var(--list-item-bg-start) 0%, var(--list-item-bg-end) 100%);
+  border-radius: 14px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--primary-color);
+  transition: all 0.2s ease;
+}
+
+.aluno-card:hover {
+  transform: translateX(3px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.aluno-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.aluno-card-nome {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aluno-card-email {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aluno-card-turma {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.aluno-card-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-boletim-card {
+  background: linear-gradient(135deg, #2b9348, #1a6b32);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+  width: auto;
+  height: auto;
+  min-height: unset;
+}
+
+.btn-boletim-card:hover { opacity: 0.85; }
+
+.btn-excluir-card {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+  width: auto;
+  height: auto;
+  min-height: unset;
+}
+
+.btn-excluir-card:hover { opacity: 0.85; }
+
 /* ── RANKING DE TAREFAS ─────────────────────────────────── */
 .ranking-lista {
   list-style: none;
