@@ -2547,8 +2547,12 @@ window.addEventListener('beforeinstallprompt', (e) => {
   const banner = document.createElement('div');
   banner.className = 'pwa-banner';
   banner.innerHTML = `
-    <span>📱 Instalar app na tela inicial</span>
-    <button id="btnInstalarApp">Instalar</button>
+    <span class="pwa-banner-icon">📚</span>
+    <div class="pwa-banner-info">
+      <div class="pwa-banner-titulo">Agenda Escolar</div>
+      <div class="pwa-banner-sub">Instalar na tela inicial</div>
+    </div>
+    <button class="pwa-banner-instalar" id="btnInstalarApp">Instalar</button>
     <button class="pwa-banner-fechar" id="btnFecharPwa">✕</button>
   `;
   document.body.appendChild(banner);

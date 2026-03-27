@@ -70,6 +70,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
+app.get('/favicon.ico', (req, res) => res.redirect('/favicon.svg'));
 
 // Tabelas Supabase:
 // alunos         → Cadastro_Aluno
