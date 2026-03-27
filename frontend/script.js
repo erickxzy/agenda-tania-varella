@@ -1,3 +1,11 @@
+// ─── ADMIN FETCH COM TOKEN DE SEGURANÇA ───────────────────────────────────────
+function adminFetch(url, options = {}) {
+  const token = sessionStorage.getItem('adminToken');
+  const headers = { ...(options.headers || {}) };
+  if (token) headers['X-Admin-Token'] = token;
+  return fetch(url, { ...options, headers });
+}
+
 // ─── SUPABASE + GOOGLE OAUTH ──────────────────────────────────────────────────
 let supabaseClient = null;
 
@@ -527,6 +535,7 @@ loginForm.addEventListener("submit", async e => {
         const data = await res.json();
         if(data.sucesso){
           usuarioAtual = data.usuario;
+          if(data.token) sessionStorage.setItem('adminToken', data.token);
           mostrarPainelAdmin();
         } else {
           showToast(data.erro || 'Erro ao fazer login', 'error');
@@ -758,6 +767,7 @@ async function logarDirecao(email,senha){
       const data = await res.json();
       if(data.sucesso){
         usuarioAtual = data.usuario;
+        if(data.token) sessionStorage.setItem('adminToken', data.token);
         mostrarPainelAdmin();
         showToast('Bem-vindo, ' + data.usuario.nome + '!', 'success', 'Login Realizado');
       }
@@ -931,14 +941,14 @@ async function carregarLogs(){
         </thead>
         <tbody>
           ${logs.map(log => {
-            const dataHora = new Date(log.data_hora).toLocaleString('pt-BR');
+            const dataHora = log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : '—';
             return `
               <tr>
-                <td><strong>${log.nome}</strong></td>
-                <td>${log.email}</td>
-                <td>${log.turma}</td>
+                <td><strong>${sanitizeHTML(log.nome || '')}</strong></td>
+                <td>${sanitizeHTML(log.email || '')}</td>
+                <td>${sanitizeHTML(log.turma || '')}</td>
                 <td>${dataHora}</td>
-                <td><code>${log.ip_address || 'N/A'}</code></td>
+                <td><code>${sanitizeHTML(log.ip_address || 'N/A')}</code></td>
               </tr>
             `;
           }).join('')}
@@ -1010,7 +1020,7 @@ async function excluirAluno(id, nome) {
   }
 
   try {
-    const res = await fetch(`/api/alunos/${id}`, {
+    const res = await adminFetch(`/api/alunos/${id}`, {
       method: 'DELETE'
     });
 
@@ -1079,7 +1089,7 @@ async function atualizarEventosAdmin(){
         if(!texto) return;
 
         try {
-          const res = await fetch('/api/eventos', {
+          const res = await adminFetch('/api/eventos', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({serie: turma.codigo, descricao: texto})
@@ -1106,7 +1116,7 @@ async function atualizarEventosAdmin(){
       if(!novo) return;
 
       try {
-        const res = await fetch(`/api/eventos/${id}`, {
+        const res = await adminFetch(`/api/eventos/${id}`, {
           method: 'PUT',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({descricao: novo.trim()})
@@ -1133,7 +1143,7 @@ async function atualizarEventosAdmin(){
       if(!confirmado) return;
 
       try {
-        const res = await fetch(`/api/eventos/${id}`, {method: 'DELETE'});
+        const res = await adminFetch(`/api/eventos/${id}`, {method: 'DELETE'});
         if(res.ok){
           showToast("Evento excluído com sucesso!", "success");
           atualizarEventosAdmin();
@@ -1266,7 +1276,7 @@ async function salvarAlteracoesProfessores(){
       const status = tr.querySelector(".editable-status").textContent.trim();
       const data = tr.querySelector(".editable-data").textContent.trim();
 
-      const response = await fetch(`/api/professores/${id}`, {
+      const response = await adminFetch(`/api/professores/${id}`, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({nome, materia, status, data})
@@ -1329,7 +1339,7 @@ async function mostrarCardapioAdmin(){
       };
 
       try {
-        const res = await fetch(`/api/cardapio/${encodeURIComponent(diaSemana)}`, {
+        const res = await adminFetch(`/api/cardapio/${encodeURIComponent(diaSemana)}`, {
           method: 'PUT',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(dadosCardapio)
@@ -1423,7 +1433,7 @@ document.getElementById("formNovoAviso").addEventListener("submit", async (e)=>{
   }
 
   try {
-    const res = await fetch('/api/avisos', {
+    const res = await adminFetch('/api/avisos', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({tipo, professor, titulo, descricao, data_aviso})
@@ -1479,7 +1489,7 @@ document.getElementById("formEditarAviso").addEventListener("submit", async (e)=
   const data_aviso = document.getElementById("editData").value.trim();
 
   try {
-    const res = await fetch(`/api/avisos/${avisoEditandoId}`, {
+    const res = await adminFetch(`/api/avisos/${avisoEditandoId}`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({tipo, professor, titulo, descricao, data_aviso})
@@ -1509,7 +1519,7 @@ async function excluirAviso(e){
   if(!confirmado) return;
 
   try {
-    const res = await fetch(`/api/avisos/${id}`, {method: 'DELETE'});
+    const res = await adminFetch(`/api/avisos/${id}`, {method: 'DELETE'});
     if(res.ok){
       showToast("Aviso excluído com sucesso!", "success");
       mostrarAvisosAdmin();
@@ -1533,6 +1543,7 @@ document.getElementById("sairAdmin").addEventListener("click",()=>{
   loginForm.reset();
   usuarioAtual = null;
   tipoUsuario = null;
+  sessionStorage.removeItem('adminToken');
 });
 
 const sininho = document.getElementById("sininho");
@@ -1715,7 +1726,7 @@ async function carregarProfessoresTurma(turma) {
 async function atualizarStatusProfessor(id, novoStatus, turma) {
   try {
     const dataAtual = new Date().toLocaleDateString('pt-BR');
-    const res = await fetch(`/api/professores-turma/${id}`, {
+    const res = await adminFetch(`/api/professores-turma/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: novoStatus, data: dataAtual })
@@ -1838,7 +1849,7 @@ document.getElementById('btnAdicionarProva')?.addEventListener('click', async ()
   const data = document.getElementById('provaData').value;
   const turma = document.getElementById('provaTurma').value;
   if (!titulo || !materia || !data || !turma) { showToast('Preencha todos os campos obrigatórios!', 'error'); return; }
-  const res = await fetch('/api/provas', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ titulo, materia, descricao, data, turma, criado_por: 'Admin' }) });
+  const res = await adminFetch('/api/provas', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ titulo, materia, descricao, data, turma, criado_por: 'Admin' }) });
   const result = await res.json();
   if (result.sucesso) {
     showToast('Prova adicionada com sucesso!', 'success');
@@ -1853,7 +1864,7 @@ document.getElementById('btnAdicionarProva')?.addEventListener('click', async ()
 
 async function deletarProva(id) {
   if (!confirm('Excluir esta prova?')) return;
-  await fetch(`/api/provas/${id}`, { method: 'DELETE' });
+  await adminFetch(`/api/provas/${id}`, { method: 'DELETE' });
   showToast('Prova excluída.', 'success');
   carregarProvasAdmin();
 }
@@ -1924,7 +1935,7 @@ async function carregarDuvidasAdmin() {
 async function responderDuvida(id) {
   const resposta = document.getElementById(`resp-${id}`).value.trim();
   if (!resposta) { showToast('Digite uma resposta.', 'error'); return; }
-  const res = await fetch(`/api/duvidas/${id}/resposta`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ resposta, respondido_por: 'Professor' }) });
+  const res = await adminFetch(`/api/duvidas/${id}/resposta`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ resposta, respondido_por: 'Professor' }) });
   const result = await res.json();
   if (result.sucesso) { showToast('Resposta enviada!', 'success'); carregarDuvidasAdmin(); }
   else { showToast(result.erro || 'Erro.', 'error'); }
@@ -1932,7 +1943,7 @@ async function responderDuvida(id) {
 
 async function deletarDuvida(id) {
   if (!confirm('Excluir esta dúvida?')) return;
-  await fetch(`/api/duvidas/${id}`, { method: 'DELETE' });
+  await adminFetch(`/api/duvidas/${id}`, { method: 'DELETE' });
   showToast('Dúvida excluída.', 'success');
   carregarDuvidasAdmin();
 }
@@ -2019,7 +2030,7 @@ document.getElementById('btnAdicionarTarefa')?.addEventListener('click', async (
   const turma = document.getElementById('tarefaTurma').value;
   const prazo = document.getElementById('tarefaPrazo').value;
   if (!titulo || !materia || !turma || !prazo) { showToast('Preencha todos os campos obrigatórios!', 'error'); return; }
-  const res = await fetch('/api/tarefas', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ titulo, materia, descricao, turma, prazo, criado_por: 'Admin' }) });
+  const res = await adminFetch('/api/tarefas', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ titulo, materia, descricao, turma, prazo, criado_por: 'Admin' }) });
   const result = await res.json();
   if (result.sucesso) {
     showToast('Tarefa adicionada!', 'success');
@@ -2031,7 +2042,7 @@ document.getElementById('btnAdicionarTarefa')?.addEventListener('click', async (
 
 async function deletarTarefa(id) {
   if (!confirm('Excluir esta tarefa?')) return;
-  await fetch(`/api/tarefas/${id}`, { method: 'DELETE' });
+  await adminFetch(`/api/tarefas/${id}`, { method: 'DELETE' });
   showToast('Tarefa excluída.', 'success');
   carregarTarefasAdmin();
 }
@@ -2142,7 +2153,7 @@ document.getElementById('btnCriarEnquete')?.addEventListener('click', async () =
   const turma = document.getElementById('enqueteTurma').value;
   const opcoes = Array.from(document.querySelectorAll('.opcao-enquete-input')).map(i => i.value.trim()).filter(v => v);
   if (!pergunta || !turma || opcoes.length < 2) { showToast('Preencha pergunta, turma e pelo menos 2 opções.', 'error'); return; }
-  const res = await fetch('/api/enquetes', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ pergunta, opcoes, turma, criado_por: 'Admin' }) });
+  const res = await adminFetch('/api/enquetes', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ pergunta, opcoes, turma, criado_por: 'Admin' }) });
   const result = await res.json();
   if (result.sucesso) {
     showToast('Enquete criada!', 'success');
@@ -2155,7 +2166,7 @@ document.getElementById('btnCriarEnquete')?.addEventListener('click', async () =
 
 async function deletarEnquete(id) {
   if (!confirm('Excluir esta enquete e todos os votos?')) return;
-  await fetch(`/api/enquetes/${id}`, { method: 'DELETE' });
+  await adminFetch(`/api/enquetes/${id}`, { method: 'DELETE' });
   showToast('Enquete excluída.', 'success');
   carregarEnquetesAdmin();
 }

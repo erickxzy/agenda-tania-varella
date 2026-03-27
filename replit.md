@@ -125,6 +125,10 @@ projeto/
 - Validação de e-mails (@escola.pr.gov.br para alunos)
 - Sistema de recuperação de senha com código de 6 dígitos
 - Códigos expiram em 30 minutos
+- **Token de sessão administrativo**: login do admin e direção gera token aleatório de 64 chars (crypto.randomBytes), válido por 8 horas, armazenado em `adminSessions` Map no servidor
+- **Middleware `requireAdminAuth`**: protege todos os 18 endpoints de escrita (POST/PUT/DELETE) — verifica header `X-Admin-Token`; retorna 401 sem token ou com sessão expirada
+- **Frontend `adminFetch`**: wrapper que injeta automaticamente o token em todas as chamadas administrativas
+- **Logs limpos**: admin não gera entrada no log (admin é único); datas corrigidas para ler `created_at` em vez de `data_hora` (que era null); saída sanitizada contra XSS
 
 ## Criadores
 - Erick Gustavo Dos Santos Gomes

@@ -1,12 +1,33 @@
 require('dotenv').config();
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 const path = require('path');
 
 // Armazenamento temporário de registros pendentes (expira em 15 min)
 const pendentesVerificacao = new Map();
+
+// ── SESSÕES DE ADMINISTRADOR ─────────────────────────────────────────────────
+const adminSessions = new Map(); // token -> { nome, email, expires }
+
+function gerarTokenAdmin() {
+        return crypto.randomBytes(32).toString('hex');
+}
+
+function requireAdminAuth(req, res, next) {
+        const token = req.headers['x-admin-token'];
+        if (!token) return res.status(401).json({ erro: 'Não autorizado. Faça login como administrador.' });
+        const sessao = adminSessions.get(token);
+        if (!sessao) return res.status(401).json({ erro: 'Sessão inválida. Faça login novamente.' });
+        if (Date.now() > sessao.expires) {
+                adminSessions.delete(token);
+                return res.status(401).json({ erro: 'Sessão expirada. Faça login novamente.' });
+        }
+        req.adminInfo = sessao;
+        next();
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -403,6 +424,21 @@ app.post('/api/login', async (req, res) => {
                 return res.status(400).json({ sucesso: false, erro: 'E-mail ou senha incorretos!' });
         }
 
+        // Admin: gera token de sessão, NÃO registra no log (admin é único)
+        if (aluno.email === 'admin@sistema.local') {
+                const token = gerarTokenAdmin();
+                adminSessions.set(token, {
+                        nome: 'Administrador',
+                        email: aluno.email,
+                        expires: Date.now() + 8 * 60 * 60 * 1000 // 8 horas
+                });
+                return res.json({
+                        sucesso: true,
+                        token,
+                        usuario: { id: aluno.id, nome: aluno.nome, email: aluno.email, serie: aluno.serie }
+                });
+        }
+
         const ipAddress = req.ip || req.connection.remoteAddress || 'desconhecido';
         const userAgent = req.get('User-Agent') || 'desconhecido';
 
@@ -445,11 +481,20 @@ app.post('/api/login-direcao', async (req, res) => {
                 return res.status(400).json({ sucesso: false, erro: 'E-mail ou senha incorretos!' });
         }
 
+        const nomeMembro = membro.nome || email.split('@')[0];
+        const token = gerarTokenAdmin();
+        adminSessions.set(token, {
+                nome: nomeMembro,
+                email: membro['E-mail'],
+                expires: Date.now() + 8 * 60 * 60 * 1000 // 8 horas
+        });
+
         res.json({
                 sucesso: true,
+                token,
                 usuario: {
                         id: membro.id,
-                        nome: membro.nome || email.split('@')[0],
+                        nome: nomeMembro,
                         email: membro['E-mail']
                 }
         });
@@ -544,7 +589,7 @@ app.get('/api/alunos', async (req, res) => {
         res.json(data);
 });
 
-app.delete('/api/alunos/:id', async (req, res) => {
+app.delete('/api/alunos/:id', requireAdminAuth, async (req, res) => {
         const { id } = req.params;
 
         const { data: aluno } = await supabase
@@ -602,7 +647,7 @@ app.get('/api/eventos', async (req, res) => {
         res.json(data);
 });
 
-app.post('/api/eventos', async (req, res) => {
+app.post('/api/eventos', requireAdminAuth, async (req, res) => {
         const { serie, descricao, data_evento } = req.body;
 
         if (!serie || !descricao) {
@@ -626,7 +671,7 @@ app.post('/api/eventos', async (req, res) => {
         res.json({ sucesso: true, mensagem: 'Evento criado com sucesso!' });
 });
 
-app.put('/api/eventos/:id', async (req, res) => {
+app.put('/api/eventos/:id', requireAdminAuth, async (req, res) => {
         const { id } = req.params;
         const { descricao, data_evento, serie } = req.body;
 
@@ -649,7 +694,7 @@ app.put('/api/eventos/:id', async (req, res) => {
         res.json({ sucesso: true, mensagem: 'Evento atualizado com sucesso!' });
 });
 
-app.delete('/api/eventos/:id', async (req, res) => {
+app.delete('/api/eventos/:id', requireAdminAuth, async (req, res) => {
         const { data: evento } = await supabase
                 .from('Conteudos')
                 .select('*')
@@ -685,7 +730,7 @@ app.get('/api/cardapio/:dia', async (req, res) => {
         }
 });
 
-app.put('/api/cardapio/:dia', async (req, res) => {
+app.put('/api/cardapio/:dia', requireAdminAuth, async (req, res) => {
         const { dia } = req.params;
         const { prato, acompanhamento, sobremesa, bebida } = req.body;
 
@@ -705,7 +750,7 @@ app.get('/api/professores', async (req, res) => {
         res.json(data);
 });
 
-app.put('/api/professores/:id', async (req, res) => {
+app.put('/api/professores/:id', requireAdminAuth, async (req, res) => {
         const { id } = req.params;
         const { nome, materia, status, data } = req.body;
 
@@ -729,7 +774,7 @@ app.get('/api/avisos', async (req, res) => {
         res.json(data);
 });
 
-app.post('/api/avisos', async (req, res) => {
+app.post('/api/avisos', requireAdminAuth, async (req, res) => {
         const { tipo, professor, titulo, descricao, data_aviso } = req.body;
 
         const { error } = await supabase
@@ -740,7 +785,7 @@ app.post('/api/avisos', async (req, res) => {
         res.json({ sucesso: true });
 });
 
-app.put('/api/avisos/:id', async (req, res) => {
+app.put('/api/avisos/:id', requireAdminAuth, async (req, res) => {
         const { id } = req.params;
         const { tipo, professor, titulo, descricao, data_aviso } = req.body;
 
@@ -753,7 +798,7 @@ app.put('/api/avisos/:id', async (req, res) => {
         res.json({ sucesso: true });
 });
 
-app.delete('/api/avisos/:id', async (req, res) => {
+app.delete('/api/avisos/:id', requireAdminAuth, async (req, res) => {
         const { error } = await supabase.from('Avisos').delete().eq('id', req.params.id);
         if (error) return res.status(500).json({ sucesso: false, erro: 'Erro ao excluir aviso' });
         res.json({ sucesso: true });
@@ -782,7 +827,7 @@ app.get('/api/professores-turma/:turma', async (req, res) => {
         res.json(data);
 });
 
-app.put('/api/professores-turma/:id', async (req, res) => {
+app.put('/api/professores-turma/:id', requireAdminAuth, async (req, res) => {
         const { id } = req.params;
         const { status, data } = req.body;
 
@@ -857,7 +902,7 @@ app.get('/api/provas', async (req, res) => {
         res.json(data || []);
 });
 
-app.post('/api/provas', async (req, res) => {
+app.post('/api/provas', requireAdminAuth, async (req, res) => {
         const { titulo, materia, descricao, data, turma, criado_por } = req.body;
         if (!titulo || !materia || !data || !turma) return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
         const { data: novo, error } = await supabase.from('provas').insert({ titulo, materia, descricao, data, turma, criado_por }).select().single();
@@ -865,7 +910,7 @@ app.post('/api/provas', async (req, res) => {
         res.json({ sucesso: true, prova: novo });
 });
 
-app.delete('/api/provas/:id', async (req, res) => {
+app.delete('/api/provas/:id', requireAdminAuth, async (req, res) => {
         const { data: existe } = await supabase.from('provas').select('id').eq('id', req.params.id).single();
         if (!existe) return res.status(404).json({ erro: 'Prova não encontrada.' });
         const { error } = await supabase.from('provas').delete().eq('id', req.params.id);
@@ -893,7 +938,7 @@ app.post('/api/duvidas', async (req, res) => {
         res.json({ sucesso: true, duvida: nova });
 });
 
-app.put('/api/duvidas/:id/resposta', async (req, res) => {
+app.put('/api/duvidas/:id/resposta', requireAdminAuth, async (req, res) => {
         const { resposta, respondido_por } = req.body;
         if (!resposta) return res.status(400).json({ erro: 'Resposta não pode ser vazia.' });
         const { error } = await supabase.from('duvidas').update({ resposta, respondido_por, respondido_at: new Date().toISOString() }).eq('id', req.params.id);
@@ -901,7 +946,7 @@ app.put('/api/duvidas/:id/resposta', async (req, res) => {
         res.json({ sucesso: true });
 });
 
-app.delete('/api/duvidas/:id', async (req, res) => {
+app.delete('/api/duvidas/:id', requireAdminAuth, async (req, res) => {
         const { error } = await supabase.from('duvidas').delete().eq('id', req.params.id);
         if (error) return res.status(500).json({ erro: error.message });
         res.json({ sucesso: true });
@@ -919,7 +964,7 @@ app.get('/api/tarefas', async (req, res) => {
         res.json(data || []);
 });
 
-app.post('/api/tarefas', async (req, res) => {
+app.post('/api/tarefas', requireAdminAuth, async (req, res) => {
         const { titulo, descricao, materia, turma, prazo, criado_por } = req.body;
         if (!titulo || !materia || !turma || !prazo) return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
         const { data: nova, error } = await supabase.from('tarefas').insert({ titulo, descricao, materia, turma, prazo, criado_por }).select().single();
@@ -945,7 +990,7 @@ app.get('/api/tarefas/concluidas/:email', async (req, res) => {
         res.json((data || []).map(t => t.tarefa_id));
 });
 
-app.delete('/api/tarefas/:id', async (req, res) => {
+app.delete('/api/tarefas/:id', requireAdminAuth, async (req, res) => {
         const { data: existe } = await supabase.from('tarefas').select('id').eq('id', req.params.id).single();
         if (!existe) return res.status(404).json({ erro: 'Tarefa não encontrada.' });
         await supabase.from('tarefas_concluidas').delete().eq('tarefa_id', req.params.id);
@@ -966,7 +1011,7 @@ app.get('/api/enquetes', async (req, res) => {
         res.json(data || []);
 });
 
-app.post('/api/enquetes', async (req, res) => {
+app.post('/api/enquetes', requireAdminAuth, async (req, res) => {
         const { pergunta, opcoes, turma, criado_por } = req.body;
         if (!pergunta || !opcoes || opcoes.length < 2 || !turma) return res.status(400).json({ erro: 'Preencha todos os campos. Mínimo 2 opções.' });
         const { data: nova, error } = await supabase.from('enquetes').insert({ pergunta, opcoes, turma, criado_por, ativa: true }).select().single();
@@ -991,7 +1036,7 @@ app.get('/api/enquetes/:id/resultados', async (req, res) => {
         res.json({ total: votos.length, contagem });
 });
 
-app.delete('/api/enquetes/:id', async (req, res) => {
+app.delete('/api/enquetes/:id', requireAdminAuth, async (req, res) => {
         await supabase.from('votos').delete().eq('enquete_id', req.params.id);
         const { error } = await supabase.from('enquetes').delete().eq('id', req.params.id);
         if (error) return res.status(500).json({ erro: error.message });
