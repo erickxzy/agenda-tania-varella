@@ -2545,22 +2545,72 @@ window.addEventListener('beforeinstallprompt', (e) => {
   pwaPrompt = e;
 
   const banner = document.createElement('div');
-  banner.className = 'pwa-banner';
+  banner.id = 'pwaBanner';
+  banner.style.cssText = `
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(100px);
+    z-index:9999; width:calc(100% - 32px); max-width:360px;
+    background:var(--card-bg); border:1px solid var(--border-color);
+    border-radius:20px; padding:18px 16px 16px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06);
+    opacity:0; transition:transform 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease;
+    font-family:inherit;
+  `;
   banner.innerHTML = `
-    <span class="pwa-banner-icon">📚</span>
-    <div class="pwa-banner-info">
-      <div class="pwa-banner-titulo">Agenda Escolar</div>
-      <div class="pwa-banner-sub">Instalar na tela inicial</div>
+    <button id="btnFecharPwa" style="
+      position:absolute; top:10px; right:12px;
+      background:none; border:none; color:var(--text-tertiary);
+      font-size:1rem; cursor:pointer; padding:4px; line-height:1;
+      width:auto; height:auto; min-height:unset;
+    ">✕</button>
+
+    <div style="display:flex; align-items:center; gap:13px; margin-bottom:14px;">
+      <div style="
+        width:48px; height:48px; border-radius:12px; flex-shrink:0;
+        background:linear-gradient(135deg,#4361ee,#3a0ca3);
+        display:flex; align-items:center; justify-content:center;
+        font-size:1.6rem; box-shadow:0 4px 14px rgba(67,97,238,0.35);
+      ">📚</div>
+      <div style="min-width:0;">
+        <div style="font-weight:700; font-size:0.95rem; color:var(--text-primary); margin-bottom:2px;">Agenda Escolar</div>
+        <div style="font-size:0.78rem; color:var(--text-tertiary); line-height:1.4;">Adicionar à tela inicial e usar como app</div>
+      </div>
     </div>
-    <button class="pwa-banner-instalar" id="btnInstalarApp">Instalar</button>
-    <button class="pwa-banner-fechar" id="btnFecharPwa">✕</button>
+
+    <div style="display:flex; gap:8px;">
+      <button id="btnNaoPwa" style="
+        flex:1; padding:10px; border-radius:11px;
+        background:var(--input-bg); border:1px solid var(--border-color);
+        color:var(--text-secondary); font-size:0.85rem; font-weight:600;
+        cursor:pointer; width:auto; height:auto; min-height:unset;
+        transition:opacity 0.2s;
+      ">Agora não</button>
+      <button id="btnInstalarApp" style="
+        flex:2; padding:10px; border-radius:11px;
+        background:linear-gradient(135deg,#4361ee,#3a0ca3);
+        border:none; color:#fff; font-size:0.88rem; font-weight:700;
+        cursor:pointer; width:auto; height:auto; min-height:unset;
+        box-shadow:0 4px 18px rgba(67,97,238,0.35);
+        transition:opacity 0.2s;
+      ">📲 Instalar app</button>
+    </div>
   `;
   document.body.appendChild(banner);
+  requestAnimationFrame(() => {
+    banner.style.transform = 'translateX(-50%) translateY(0)';
+    banner.style.opacity = '1';
+  });
+
+  const fecharBanner = () => {
+    banner.style.transform = 'translateX(-50%) translateY(100px)';
+    banner.style.opacity = '0';
+    setTimeout(() => banner.remove(), 400);
+  };
 
   document.getElementById('btnInstalarApp').addEventListener('click', () => {
     pwaPrompt.prompt();
-    pwaPrompt.userChoice.then(() => { banner.remove(); pwaPrompt = null; });
+    pwaPrompt.userChoice.then(() => { fecharBanner(); pwaPrompt = null; });
   });
 
-  document.getElementById('btnFecharPwa').addEventListener('click', () => banner.remove());
+  document.getElementById('btnNaoPwa').addEventListener('click', fecharBanner);
+  document.getElementById('btnFecharPwa').addEventListener('click', fecharBanner);
 });
