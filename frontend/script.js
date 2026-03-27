@@ -406,6 +406,7 @@ const btnVoltar = document.getElementById("btnVoltar");
 let modoCadastro = false;
 let usuarioAtual = null;
 let tipoUsuario = null;
+let tipoAdmin = 'direcao'; // 'admin' | 'direcao'
 
 function sanitizeHTML(str) {
   const div = document.createElement('div');
@@ -544,6 +545,7 @@ loginForm.addEventListener("submit", async e => {
         if(data.sucesso){
           usuarioAtual = data.usuario;
           if(data.token) sessionStorage.setItem('adminToken', data.token);
+          tipoAdmin = 'admin';
           mostrarPainelAdmin();
         } else {
           showToast(data.erro || 'Erro ao fazer login', 'error');
@@ -582,11 +584,29 @@ const btnReenviarCodigo = document.getElementById('btnReenviarCodigo');
 const btnCancelarVerificacao = document.getElementById('btnCancelarVerificacao');
 
 let dadosCadastroPendente = null;
+let dadosLoginPendente = null; // { email, tipo: 'aluno'|'direcao' }
+let modoVerificacao = 'cadastro'; // 'cadastro' | 'login'
 
-function abrirModalVerificacao(email) {
+const tituloModalVerificacao = document.getElementById('tituloModalVerificacao');
+const textoModalVerificacao = document.getElementById('textoModalVerificacao');
+const btnSubmitVerificacao = document.getElementById('btnSubmitVerificacao');
+
+function abrirModalVerificacao(email, modo = 'cadastro') {
+  modoVerificacao = modo;
   emailVerificandoTexto.textContent = email;
   codigoVerificacaoInput.value = '';
   mensagemVerificacao.textContent = '';
+
+  if (modo === 'login') {
+    tituloModalVerificacao.textContent = '🔐 Verificação de Login';
+    textoModalVerificacao.textContent = 'Enviamos um código de segurança para confirmar que é você.';
+    btnSubmitVerificacao.textContent = '✅ Confirmar Login';
+  } else {
+    tituloModalVerificacao.textContent = '📧 Verificar E-mail';
+    textoModalVerificacao.textContent = 'Enviamos um código de 6 dígitos para confirmar seu cadastro.';
+    btnSubmitVerificacao.textContent = '✅ Confirmar Cadastro';
+  }
+
   modalVerificacaoCadastro.classList.remove('hidden');
   modalVerificacaoCadastro.style.display = 'flex';
   setTimeout(() => codigoVerificacaoInput.focus(), 100);
@@ -600,22 +620,35 @@ function fecharModalVerificacao() {
 btnCancelarVerificacao.addEventListener('click', () => {
   fecharModalVerificacao();
   dadosCadastroPendente = null;
+  dadosLoginPendente = null;
 });
 
 btnReenviarCodigo.addEventListener('click', async () => {
-  if (!dadosCadastroPendente) return;
   btnReenviarCodigo.disabled = true;
   btnReenviarCodigo.textContent = '⏳ Enviando...';
-  const reenviarEndpoint = dadosCadastroPendente.tipo === 'direcao'
-    ? '/api/iniciar-cadastro-direcao'
-    : '/api/iniciar-cadastro';
+
   try {
-    const res = await fetch(reenviarEndpoint, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(dadosCadastroPendente)
-    });
-    const data = await res.json();
+    let res, data;
+
+    if (modoVerificacao === 'login' && dadosLoginPendente) {
+      res = await fetch('/api/reenviar-codigo-login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email: dadosLoginPendente.email })
+      });
+      data = await res.json();
+    } else if (dadosCadastroPendente) {
+      const reenviarEndpoint = dadosCadastroPendente.tipo === 'direcao'
+        ? '/api/iniciar-cadastro-direcao'
+        : '/api/iniciar-cadastro';
+      res = await fetch(reenviarEndpoint, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(dadosCadastroPendente)
+      });
+      data = await res.json();
+    } else return;
+
     if (data.sucesso) {
       mensagemVerificacao.style.color = 'green';
       mensagemVerificacao.textContent = '✅ Novo código enviado!';
@@ -633,10 +666,54 @@ btnReenviarCodigo.addEventListener('click', async () => {
 formVerificacaoCadastro.addEventListener('submit', async e => {
   e.preventDefault();
   const codigo = codigoVerificacaoInput.value.trim();
-  if (!codigo || !dadosCadastroPendente) return;
+  if (!codigo) return;
 
   mensagemVerificacao.style.color = 'var(--text-secondary)';
   mensagemVerificacao.textContent = '⏳ Verificando...';
+
+  // ── Modo LOGIN ──
+  if (modoVerificacao === 'login' && dadosLoginPendente) {
+    const endpoint = dadosLoginPendente.tipo === 'direcao'
+      ? '/api/confirmar-login-direcao'
+      : '/api/confirmar-login-aluno';
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email: dadosLoginPendente.email, codigo })
+      });
+      const data = await res.json();
+
+      if (data.sucesso) {
+        fecharModalVerificacao();
+        const tipo = dadosLoginPendente.tipo;
+        dadosLoginPendente = null;
+
+        usuarioAtual = data.usuario;
+
+        if (tipo === 'direcao') {
+          if (data.token) sessionStorage.setItem('adminToken', data.token);
+          tipoAdmin = 'direcao';
+          mostrarPainelAdmin();
+          showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Login Realizado');
+        } else {
+          mostrarPainelAluno(data.usuario);
+          showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Login Realizado');
+        }
+      } else {
+        mensagemVerificacao.style.color = 'red';
+        mensagemVerificacao.textContent = data.erro;
+      }
+    } catch {
+      mensagemVerificacao.style.color = 'red';
+      mensagemVerificacao.textContent = 'Erro ao verificar. Tente novamente.';
+    }
+    return;
+  }
+
+  // ── Modo CADASTRO ──
+  if (!dadosCadastroPendente) return;
 
   const endpoint = dadosCadastroPendente.tipo === 'direcao'
     ? '/api/verificar-codigo-direcao'
@@ -718,16 +795,21 @@ async function logarAluno(email,senha){
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({email, senha})
     });
+    const data = await res.json();
 
-    if(res.ok){
-      const data = await res.json();
-      if(data.sucesso){
-        usuarioAtual = data.usuario;
-        mostrarPainelAluno(data.usuario);
-        showToast('Bem-vindo, ' + data.usuario.nome + '!', 'success', 'Login Realizado');
-      }
+    if(data.sucesso && data.pendente) {
+      // Aguarda código de verificação por e-mail
+      dadosLoginPendente = { email, tipo: 'aluno' };
+      showToast('Código enviado! Verifique seu e-mail.', 'info', '🔐 Verificação de Login');
+      abrirModalVerificacao(email, 'login');
+    } else if(data.sucesso) {
+      // Admin: entra direto
+      usuarioAtual = data.usuario;
+      if(data.token) sessionStorage.setItem('adminToken', data.token);
+      tipoAdmin = data.tipoAdmin || 'admin';
+      mostrarPainelAdmin();
+      showToast('Bem-vindo, ' + data.usuario.nome + '!', 'success', 'Login Realizado');
     } else {
-      const data = await res.json();
       showToast(data.erro, 'error');
     }
   } catch(error) {
@@ -770,17 +852,20 @@ async function logarDirecao(email,senha){
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({email, senha})
     });
+    const data = await res.json();
 
-    if(res.ok){
-      const data = await res.json();
-      if(data.sucesso){
-        usuarioAtual = data.usuario;
-        if(data.token) sessionStorage.setItem('adminToken', data.token);
-        mostrarPainelAdmin();
-        showToast('Bem-vindo, ' + data.usuario.nome + '!', 'success', 'Login Realizado');
-      }
+    if(data.sucesso && data.pendente) {
+      // Aguarda código de verificação por e-mail
+      dadosLoginPendente = { email, tipo: 'direcao' };
+      showToast('Código enviado! Verifique seu e-mail.', 'info', '🔐 Verificação de Login');
+      abrirModalVerificacao(email, 'login');
+    } else if(data.sucesso) {
+      usuarioAtual = data.usuario;
+      if(data.token) sessionStorage.setItem('adminToken', data.token);
+      tipoAdmin = data.tipoAdmin || 'direcao';
+      mostrarPainelAdmin();
+      showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Login Realizado');
     } else {
-      const data = await res.json();
       showToast(data.erro, 'error');
     }
   } catch(error) {
@@ -861,6 +946,16 @@ function mostrarPainelAdmin(){
   if(usuarioAtual && usuarioAtual.nome){
     const titulo = adminPanel.querySelector("h2");
     titulo.textContent = `Bem-vindo(a), ${usuarioAtual.nome}!`;
+  }
+
+  // Aba de Logs: visível apenas para admin, oculta para direção
+  const btnLogs = document.getElementById('btnCategoriaLogs');
+  if (btnLogs) {
+    if (tipoAdmin === 'admin') {
+      btnLogs.style.display = '';
+    } else {
+      btnLogs.style.display = 'none';
+    }
   }
   
   configurarNavegacaoAdmin();

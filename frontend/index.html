@@ -154,7 +154,7 @@
                                 <span class="categoria-icone">🍽️</span>
                                 <span class="categoria-texto">Cardápio</span>
                         </button>
-                        <button class="btn-categoria" data-secao="logs">
+                        <button class="btn-categoria" id="btnCategoriaLogs" data-secao="logs">
                                 <span class="categoria-icone">📊</span>
                                 <span class="categoria-texto">Logs</span>
                         </button>
@@ -326,14 +326,14 @@
         <!-- Modal Verificação de Cadastro -->
         <div id="modalVerificacaoCadastro" class="modal-overlay hidden" style="display: none;">
                 <div class="modal-conteudo">
-                        <h2>📧 Verificar E-mail</h2>
+                        <h2 id="tituloModalVerificacao">📧 Verificar E-mail</h2>
                         <p style="color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
-                                Enviamos um código de 6 dígitos para seu e-mail.<br>
+                                <span id="textoModalVerificacao">Enviamos um código de 6 dígitos para confirmar seu cadastro.</span><br>
                                 <strong id="emailVerificandoTexto"></strong>
                         </p>
                         <form id="formVerificacaoCadastro">
                                 <input type="text" id="codigoVerificacao" placeholder="Digite o código de 6 dígitos" maxlength="6" required autocomplete="one-time-code" style="font-size: 1.4rem; letter-spacing: 8px; text-align: center;">
-                                <button type="submit" class="btn-fechar-modal" style="width: 100%; margin-top: 15px;">
+                                <button type="submit" id="btnSubmitVerificacao" class="btn-fechar-modal" style="width: 100%; margin-top: 15px;">
                                         ✅ Confirmar Cadastro
                                 </button>
                         </form>
@@ -564,6 +564,6 @@
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026f"></script>
+        <script src="script.js?v=2026g"></script>
 </body>
 </html>

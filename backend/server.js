@@ -9,6 +9,9 @@ const path = require('path');
 // Armazenamento temporário de registros pendentes (expira em 15 min)
 const pendentesVerificacao = new Map();
 
+// Armazenamento temporário de logins pendentes de verificação (expira em 10 min)
+const loginsPendentes = new Map(); // email → { userData, codigo, expires, tipo }
+
 // ── SESSÕES DE ADMINISTRADOR ─────────────────────────────────────────────────
 const adminSessions = new Map(); // token -> { nome, email, expires }
 
@@ -141,6 +144,27 @@ async function enviarCodigoEmail(destinatario, codigo, nome) {
                                 </div>
                                 <p style="color: #666; font-size: 0.9rem;">Este código expira em <strong>15 minutos</strong>. Não compartilhe com ninguém.</p>
                                 <p style="color: #999; font-size: 0.8rem;">Se você não solicitou este cadastro, ignore este e-mail.</p>
+                        </div>
+                `
+        });
+}
+
+async function enviarCodigoLoginEmail(destinatario, codigo, nome) {
+        const transporter = criarTransporter();
+        await transporter.sendMail({
+                from: `"Agenda Escolar Tânia Varella Ferreira" <${process.env.EMAIL_REMETENTE}>`,
+                to: destinatario,
+                subject: '🔐 Código de Verificação de Login',
+                html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background: #f0f4ff; border-radius: 12px;">
+                                <h2 style="color: #4361ee; text-align: center;">📚 Agenda Escolar Tânia Varella Ferreira</h2>
+                                <p>Olá, <strong>${nome}</strong>!</p>
+                                <p>Alguém acabou de tentar entrar na sua conta. Se foi você, use o código abaixo para confirmar o login:</p>
+                                <div style="background: #2b9348; color: white; font-size: 2.5rem; font-weight: bold; letter-spacing: 12px; text-align: center; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                                        ${codigo}
+                                </div>
+                                <p style="color: #666; font-size: 0.9rem;">Este código expira em <strong>10 minutos</strong>. Não compartilhe com ninguém.</p>
+                                <p style="color: #999; font-size: 0.8rem;">Se você não tentou fazer login, ignore este e-mail e considere trocar sua senha.</p>
                         </div>
                 `
         });
@@ -424,20 +448,57 @@ app.post('/api/login', async (req, res) => {
                 return res.status(400).json({ sucesso: false, erro: 'E-mail ou senha incorretos!' });
         }
 
-        // Admin: gera token de sessão, NÃO registra no log (admin é único)
+        // Admin: gera token de sessão diretamente, sem código de verificação
         if (aluno.email === 'admin@sistema.local') {
                 const token = gerarTokenAdmin();
                 adminSessions.set(token, {
                         nome: 'Administrador',
                         email: aluno.email,
-                        expires: Date.now() + 8 * 60 * 60 * 1000 // 8 horas
+                        tipo: 'admin',
+                        expires: Date.now() + 8 * 60 * 60 * 1000
                 });
                 return res.json({
                         sucesso: true,
                         token,
+                        tipoAdmin: 'admin',
                         usuario: { id: aluno.id, nome: aluno.nome, email: aluno.email, serie: aluno.serie }
                 });
         }
+
+        // Aluno comum: envia código de verificação por e-mail
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+        loginsPendentes.set(email, {
+                alunoData: aluno,
+                codigo,
+                expires: Date.now() + 10 * 60 * 1000 // 10 minutos
+        });
+
+        try {
+                await enviarCodigoLoginEmail(email, codigo, aluno.nome);
+        } catch (emailErr) {
+                console.error('Erro ao enviar código de login:', emailErr.message);
+                return res.status(500).json({ sucesso: false, erro: 'Erro ao enviar código de verificação. Tente novamente.' });
+        }
+
+        return res.json({ sucesso: true, pendente: true, email });
+});
+
+// ─── CONFIRMAR LOGIN ALUNO (valida código) ────────────────────────────────────
+app.post('/api/confirmar-login-aluno', async (req, res) => {
+        const { email, codigo } = req.body;
+        const pendente = loginsPendentes.get(email);
+
+        if (!pendente || Date.now() > pendente.expires) {
+                loginsPendentes.delete(email);
+                return res.status(400).json({ sucesso: false, erro: 'Código expirado. Faça login novamente.' });
+        }
+
+        if (pendente.codigo !== codigo) {
+                return res.status(400).json({ sucesso: false, erro: 'Código incorreto. Tente novamente.' });
+        }
+
+        loginsPendentes.delete(email);
+        const aluno = pendente.alunoData;
 
         const ipAddress = req.ip || req.connection.remoteAddress || 'desconhecido';
         const userAgent = req.get('User-Agent') || 'desconhecido';
@@ -451,15 +512,34 @@ app.post('/api/login', async (req, res) => {
                 user_agent: userAgent
         });
 
-        res.json({
+        return res.json({
                 sucesso: true,
-                usuario: {
-                        id: aluno.id,
-                        nome: aluno.nome,
-                        email: aluno.email,
-                        serie: aluno.serie
-                }
+                usuario: { id: aluno.id, nome: aluno.nome, email: aluno.email, serie: aluno.serie }
         });
+});
+
+// ─── REENVIAR CÓDIGO DE LOGIN ─────────────────────────────────────────────────
+app.post('/api/reenviar-codigo-login', async (req, res) => {
+        const { email } = req.body;
+        const pendente = loginsPendentes.get(email);
+
+        if (!pendente) {
+                return res.status(400).json({ sucesso: false, erro: 'Sessão expirada. Faça login novamente.' });
+        }
+
+        const novoCodigo = Math.floor(100000 + Math.random() * 900000).toString();
+        pendente.codigo = novoCodigo;
+        pendente.expires = Date.now() + 10 * 60 * 1000;
+        loginsPendentes.set(email, pendente);
+
+        const nome = pendente.alunoData ? pendente.alunoData.nome : (pendente.direcaoData ? (pendente.direcaoData.nome || email.split('@')[0]) : email.split('@')[0]);
+
+        try {
+                await enviarCodigoLoginEmail(email, novoCodigo, nome);
+                return res.json({ sucesso: true });
+        } catch (err) {
+                return res.status(500).json({ sucesso: false, erro: 'Erro ao reenviar. Tente novamente.' });
+        }
 });
 
 // ─── LOGIN DIREÇÃO ────────────────────────────────────────────────────────────
@@ -482,21 +562,55 @@ app.post('/api/login-direcao', async (req, res) => {
         }
 
         const nomeMembro = membro.nome || email.split('@')[0];
-        const token = gerarTokenAdmin();
-        adminSessions.set(token, {
-                nome: nomeMembro,
-                email: membro['E-mail'],
-                expires: Date.now() + 8 * 60 * 60 * 1000 // 8 horas
+
+        // Envia código de verificação por e-mail antes de liberar o painel
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+        loginsPendentes.set(email, {
+                direcaoData: { id: membro.id, nome: nomeMembro, email: membro['E-mail'] },
+                codigo,
+                expires: Date.now() + 10 * 60 * 1000 // 10 minutos
         });
 
-        res.json({
+        try {
+                await enviarCodigoLoginEmail(email, codigo, nomeMembro);
+        } catch (emailErr) {
+                console.error('Erro ao enviar código de login direção:', emailErr.message);
+                return res.status(500).json({ sucesso: false, erro: 'Erro ao enviar código de verificação. Tente novamente.' });
+        }
+
+        return res.json({ sucesso: true, pendente: true, email });
+});
+
+// ─── CONFIRMAR LOGIN DIREÇÃO (valida código) ──────────────────────────────────
+app.post('/api/confirmar-login-direcao', async (req, res) => {
+        const { email, codigo } = req.body;
+        const pendente = loginsPendentes.get(email);
+
+        if (!pendente || !pendente.direcaoData || Date.now() > pendente.expires) {
+                loginsPendentes.delete(email);
+                return res.status(400).json({ sucesso: false, erro: 'Código expirado. Faça login novamente.' });
+        }
+
+        if (pendente.codigo !== codigo) {
+                return res.status(400).json({ sucesso: false, erro: 'Código incorreto. Tente novamente.' });
+        }
+
+        loginsPendentes.delete(email);
+        const membro = pendente.direcaoData;
+
+        const token = gerarTokenAdmin();
+        adminSessions.set(token, {
+                nome: membro.nome,
+                email: membro.email,
+                tipo: 'direcao',
+                expires: Date.now() + 8 * 60 * 60 * 1000
+        });
+
+        return res.json({
                 sucesso: true,
                 token,
-                usuario: {
-                        id: membro.id,
-                        nome: nomeMembro,
-                        email: membro['E-mail']
-                }
+                tipoAdmin: 'direcao',
+                usuario: { id: membro.id, nome: membro.nome, email: membro.email }
         });
 });
 

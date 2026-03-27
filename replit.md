@@ -80,10 +80,15 @@ projeto/
 ## APIs REST
 
 ### Autenticação
-- `POST /api/cadastrar` - Cadastro de aluno
-- `POST /api/login` - Login de aluno
-- `POST /api/cadastrar-direcao` - Cadastro direção
-- `POST /api/login-direcao` - Login direção
+- `POST /api/iniciar-cadastro` - Inicia cadastro aluno (envia código por e-mail)
+- `POST /api/verificar-codigo-cadastro` - Confirma cadastro aluno
+- `POST /api/login` - Login aluno (envia código 2FA por e-mail; admin entra direto)
+- `POST /api/confirmar-login-aluno` - Confirma login aluno com código
+- `POST /api/iniciar-cadastro-direcao` - Inicia cadastro direção (envia código)
+- `POST /api/verificar-codigo-direcao` - Confirma cadastro direção
+- `POST /api/login-direcao` - Login direção (envia código 2FA por e-mail)
+- `POST /api/confirmar-login-direcao` - Confirma login direção com código
+- `POST /api/reenviar-codigo-login` - Reenvia código de verificação de login
 - `POST /api/recuperar-senha` - Solicitar código de recuperação
 - `POST /api/resetar-senha` - Redefinir senha
 
@@ -124,11 +129,12 @@ projeto/
 - Senhas criptografadas com bcryptjs
 - Validação de e-mails (@escola.pr.gov.br para alunos)
 - Sistema de recuperação de senha com código de 6 dígitos
-- Códigos expiram em 30 minutos
+- **Verificação em 2 etapas no login (2FA)**: alunos e membros da direção recebem código de 6 dígitos por e-mail após validar credenciais. Código expira em 10 minutos. Admin (`admin@sistema.local`) entra direto sem código.
 - **Token de sessão administrativo**: login do admin e direção gera token aleatório de 64 chars (crypto.randomBytes), válido por 8 horas, armazenado em `adminSessions` Map no servidor
 - **Middleware `requireAdminAuth`**: protege todos os 18 endpoints de escrita (POST/PUT/DELETE) — verifica header `X-Admin-Token`; retorna 401 sem token ou com sessão expirada
 - **Frontend `adminFetch`**: wrapper que injeta automaticamente o token em todas as chamadas administrativas
-- **Logs limpos**: admin não gera entrada no log (admin é único); datas corrigidas para ler `created_at` em vez de `data_hora` (que era null); saída sanitizada contra XSS
+- **Logs exclusivos do admin**: aba de Logs oculta para membros da direção; visível apenas para o admin (`tipoAdmin === 'admin'`); admin não gera entrada no log; saída sanitizada contra XSS
+- **Criadores modal**: hierarquia visual — Erick Gustavo como Fundador (borda dourada), demais como Co-criadores
 
 ## Criadores
 - Erick Gustavo Dos Santos Gomes
