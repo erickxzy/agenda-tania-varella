@@ -181,18 +181,20 @@ app.post('/api/login-google/turma', async (req, res) => {
 // ─── EMAIL TRANSPORTER ───────────────────────────────────────────────────────
 function criarTransporter(fast = false) {
         return nodemailer.createTransport({
-                service: 'gmail',
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
                 auth: {
                         user: process.env.EMAIL_REMETENTE,
                         pass: process.env.EMAIL_SENHA_APP
                 },
-                connectionTimeout: fast ? 3000 : 8000,
-                greetingTimeout: fast ? 3000 : 8000,
-                socketTimeout:    fast ? 4000 : 10000
+                connectionTimeout: fast ? 5000 : 10000,
+                greetingTimeout:   fast ? 5000 : 10000,
+                socketTimeout:     fast ? 6000 : 12000
         });
 }
 
-async function enviarEmailComTimeout(mailOptions, timeoutMs = 5000, fast = true) {
+async function enviarEmailComTimeout(mailOptions, timeoutMs = 8000, fast = true) {
         return Promise.race([
                 criarTransporter(fast).sendMail(mailOptions),
                 new Promise((_, reject) =>
