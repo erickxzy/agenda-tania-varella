@@ -444,7 +444,13 @@ document.getElementById("formSolicitarDirecao").addEventListener("submit", async
   e.preventDefault();
   const nome = document.getElementById("solNome").value.trim();
   const email = document.getElementById("solEmail").value.trim();
+  const senha = document.getElementById("solSenha").value;
+  const senhaConfirm = document.getElementById("solSenhaConfirm").value;
   const mensagem = document.getElementById("solMensagem").value.trim();
+  if (senha !== senhaConfirm) {
+    showToast("As senhas não coincidem.", "error");
+    return;
+  }
   const btn = e.target.querySelector("button[type=submit]");
   btn.disabled = true;
   btn.textContent = "Enviando...";
@@ -452,7 +458,7 @@ document.getElementById("formSolicitarDirecao").addEventListener("submit", async
     const res = await fetch("/api/solicitar-direcao", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, email, mensagem })
+      body: JSON.stringify({ nome, email, senha, mensagem })
     });
     const data = await res.json();
     if (data.sucesso) {
@@ -1137,13 +1143,36 @@ async function carregarSolicitacoesDirecao() {
         ${s.mensagem ? `<p class="sol-msg">"${sanitizeHTML(s.mensagem)}"</p>` : ''}
         <p style="font-size:0.75rem;color:var(--text-tertiary);">📅 ${new Date(s.created_at).toLocaleString('pt-BR')}</p>`;
 
-      const btn = document.createElement('button');
-      btn.className = 'btn-criar-conta';
-      btn.textContent = '👤 Criar Conta';
-      btn.addEventListener('click', () => abrirModalCriarContaDirecao(s.id, s.nome, s.email));
+      const acoes = document.createElement('div');
+      acoes.className = 'solicitacao-acoes';
+
+      const btnCriar = document.createElement('button');
+      btnCriar.className = 'btn-criar-conta';
+      btnCriar.textContent = '✅ Criar Conta';
+      btnCriar.addEventListener('click', () => abrirModalCriarContaDirecao(s.id, s.nome, s.email, s.tem_senha));
+
+      const btnMsg = document.createElement('button');
+      btnMsg.className = 'btn-sol-msg';
+      btnMsg.textContent = '💬 Mensagem';
+      btnMsg.addEventListener('click', () => abrirModalMsgSolicitacao(s.id, s.nome, s.email));
+
+      const btnEdit = document.createElement('button');
+      btnEdit.className = 'btn-sol-edit';
+      btnEdit.textContent = '✏️ Editar';
+      btnEdit.addEventListener('click', () => abrirModalEditarSolicitacao(s.id, s.nome, s.email));
+
+      const btnDel = document.createElement('button');
+      btnDel.className = 'btn-sol-del';
+      btnDel.textContent = '🗑️ Rejeitar';
+      btnDel.addEventListener('click', () => rejeitarSolicitacao(s.id, s.nome, s.email));
+
+      acoes.appendChild(btnCriar);
+      acoes.appendChild(btnMsg);
+      acoes.appendChild(btnEdit);
+      acoes.appendChild(btnDel);
 
       card.appendChild(info);
-      card.appendChild(btn);
+      card.appendChild(acoes);
       container.appendChild(card);
     });
   } catch(err) {
@@ -1151,14 +1180,133 @@ async function carregarSolicitacoesDirecao() {
   }
 }
 
-function abrirModalCriarContaDirecao(id, nome, email) {
+function abrirModalCriarContaDirecao(id, nome, email, temSenha) {
   _solicitacaoAtual = { id, nome, email };
-  document.getElementById('textoCriarContaDirecao').textContent = `Criar conta para ${nome} (${email}). Defina uma senha temporária — o login será enviado por e-mail.`;
-  document.getElementById('novaSenhaDirecao').value = '';
+  const senhaInput = document.getElementById('novaSenhaDirecao');
+  senhaInput.value = '';
+  senhaInput.placeholder = temSenha
+    ? 'Deixe em branco para usar a senha definida pelo solicitante'
+    : 'Criar senha para esta conta (obrigatório)';
+  senhaInput.required = !temSenha;
+  document.getElementById('textoCriarContaDirecao').innerHTML =
+    `Criar conta para <strong>${sanitizeHTML(nome)}</strong> (${sanitizeHTML(email)}).` +
+    (temSenha ? '<br><small style="color:var(--text-tertiary)">✅ Senha já definida pelo solicitante.</small>' : '');
   const m = document.getElementById('modalCriarContaDirecao');
   m.classList.remove('hidden');
   m.style.display = '';
 }
+
+// ── Editar solicitação ──────────────────────────────────────────────────────
+function abrirModalEditarSolicitacao(id, nome, email) {
+  _solicitacaoAtual = { id, nome, email };
+  document.getElementById('editSolNome').value = nome;
+  document.getElementById('editSolEmail').value = email;
+  const m = document.getElementById('modalEditarSolicitacao');
+  m.classList.remove('hidden');
+  m.style.display = '';
+}
+
+document.getElementById('btnFecharEditarSol').addEventListener('click', () => {
+  const m = document.getElementById('modalEditarSolicitacao');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+  _solicitacaoAtual = null;
+});
+
+document.getElementById('formEditarSolicitacao').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!_solicitacaoAtual) return;
+  const nome = document.getElementById('editSolNome').value.trim();
+  const email = document.getElementById('editSolEmail').value.trim();
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  try {
+    const res = await adminFetch(`/api/solicitar-direcao/${_solicitacaoAtual.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, email })
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      const m = document.getElementById('modalEditarSolicitacao');
+      m.classList.add('hidden');
+      m.style.display = 'none';
+      _solicitacaoAtual = null;
+      showToast('Solicitação atualizada!', 'success');
+      carregarSolicitacoesDirecao();
+    } else {
+      showToast(data.erro || 'Erro ao editar.', 'error');
+    }
+  } catch { showToast('Erro ao editar.', 'error'); }
+  btn.disabled = false;
+  btn.textContent = '💾 Salvar Alterações';
+});
+
+// ── Rejeitar (excluir) solicitação ─────────────────────────────────────────
+async function rejeitarSolicitacao(id, nome, email) {
+  confirmarAcao(`Rejeitar e excluir a solicitação de "${nome}" (${email})?`, async () => {
+    try {
+      const res = await adminFetch(`/api/solicitar-direcao/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.sucesso) {
+        document.getElementById(`sol-card-${id}`)?.remove();
+        showToast('Solicitação rejeitada e excluída.', 'success');
+        verificarSolicitacoesPendentes();
+        const container = document.getElementById('solicitacoesContainer');
+        if (container && !container.querySelector('.solicitacao-card')) {
+          container.innerHTML = '<p style="color:var(--text-tertiary); text-align:center; padding:20px;">Nenhuma solicitação pendente.</p>';
+        }
+      } else {
+        showToast(data.erro || 'Erro ao excluir.', 'error');
+      }
+    } catch { showToast('Erro ao excluir.', 'error'); }
+  }, { icone: '🗑️', sub: 'Esta ação não pode ser desfeita.', btnLabel: 'Rejeitar' });
+}
+
+// ── Enviar mensagem para solicitante ───────────────────────────────────────
+function abrirModalMsgSolicitacao(id, nome, email) {
+  _solicitacaoAtual = { id, nome, email };
+  document.getElementById('textoMsgSolicitacao').textContent = `Enviando mensagem para ${nome} (${email})`;
+  document.getElementById('inputMsgSolicitacao').value = '';
+  const m = document.getElementById('modalMsgSolicitacao');
+  m.classList.remove('hidden');
+  m.style.display = '';
+}
+
+document.getElementById('btnFecharMsgSol').addEventListener('click', () => {
+  const m = document.getElementById('modalMsgSolicitacao');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+  _solicitacaoAtual = null;
+});
+
+document.getElementById('formMsgSolicitacao').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!_solicitacaoAtual) return;
+  const mensagem = document.getElementById('inputMsgSolicitacao').value.trim();
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try {
+    const res = await adminFetch(`/api/solicitar-direcao/${_solicitacaoAtual.id}/mensagem`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensagem })
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      const m = document.getElementById('modalMsgSolicitacao');
+      m.classList.add('hidden');
+      m.style.display = 'none';
+      _solicitacaoAtual = null;
+      showToast('Mensagem enviada por e-mail!', 'success');
+    } else {
+      showToast(data.erro || 'Erro ao enviar mensagem.', 'error');
+    }
+  } catch { showToast('Erro ao enviar mensagem.', 'error'); }
+  btn.disabled = false;
+  btn.textContent = '📨 Enviar por E-mail';
+});
 
 document.getElementById('btnFecharCriarConta').addEventListener('click', () => {
   const m = document.getElementById('modalCriarContaDirecao');
@@ -1170,15 +1318,22 @@ document.getElementById('btnFecharCriarConta').addEventListener('click', () => {
 document.getElementById('formCriarContaDirecao').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!_solicitacaoAtual) return;
-  const senha = document.getElementById('novaSenhaDirecao').value.trim();
+  const senhaInput = document.getElementById('novaSenhaDirecao');
+  const senha = senhaInput.value.trim();
+  if (senhaInput.required && !senha) {
+    showToast('Informe uma senha para criar a conta.', 'error');
+    return;
+  }
   const btn = e.target.querySelector('button[type=submit]');
   btn.disabled = true;
   btn.textContent = 'Criando...';
   try {
+    const body = { ..._solicitacaoAtual };
+    if (senha) body.senha = senha;
     const res = await adminFetch('/api/direcao/criar-conta', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ..._solicitacaoAtual, senha })
+      body: JSON.stringify(body)
     });
     const data = await res.json();
     if (data.sucesso) {
@@ -1189,6 +1344,10 @@ document.getElementById('formCriarContaDirecao').addEventListener('submit', asyn
       _solicitacaoAtual = null;
       showToast('Conta criada e login enviado por e-mail!', 'success', 'Conta Criada');
       verificarSolicitacoesPendentes();
+      const container = document.getElementById('solicitacoesContainer');
+      if (container && !container.querySelector('.solicitacao-card')) {
+        container.innerHTML = '<p style="color:var(--text-tertiary); text-align:center; padding:20px;">Nenhuma solicitação pendente.</p>';
+      }
     } else {
       showToast(data.erro || 'Erro ao criar conta.', 'error');
     }

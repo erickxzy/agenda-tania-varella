@@ -15,7 +15,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
         <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="stylesheet" href="style.css?v=2026p">
+        <link rel="stylesheet" href="style.css?v=2026q">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -77,7 +77,9 @@
                         <form id="formSolicitarDirecao">
                                 <input type="text" id="solNome" placeholder="Seu nome completo" required>
                                 <input type="email" id="solEmail" placeholder="Seu e-mail" required>
-                                <textarea id="solMensagem" placeholder="Mensagem (opcional)" rows="3" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary); font-size:0.95rem; resize:vertical; margin-bottom:10px;"></textarea>
+                                <input type="password" id="solSenha" placeholder="Criar sua senha de acesso" required minlength="6">
+                                <input type="password" id="solSenhaConfirm" placeholder="Confirmar senha" required minlength="6">
+                                <textarea id="solMensagem" placeholder="Mensagem (opcional)" rows="2" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary); font-size:0.95rem; resize:vertical; margin-bottom:10px;"></textarea>
                                 <button type="submit" class="btn-fechar-modal">📨 Enviar Solicitação</button>
                         </form>
                         <button id="btnFecharSolicitacao" class="btn-fechar-modal" style="background:var(--text-tertiary); margin-top:8px;">Cancelar</button>
@@ -90,10 +92,36 @@
                         <h2>👤 Criar Conta — Direção</h2>
                         <p id="textoCriarContaDirecao" style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:18px; text-align:center;"></p>
                         <form id="formCriarContaDirecao">
-                                <input type="password" id="novaSenhaDirecao" placeholder="Criar senha para esta conta" required minlength="6">
+                                <input type="password" id="novaSenhaDirecao" placeholder="Senha (deixe em branco para usar a da solicitação)" minlength="6">
                                 <button type="submit" class="btn-fechar-modal">✅ Criar Conta e Enviar Login</button>
                         </form>
                         <button id="btnFecharCriarConta" class="btn-fechar-modal" style="background:var(--text-tertiary); margin-top:8px;">Cancelar</button>
+                </div>
+        </div>
+
+        <!-- MODAL: Admin editar solicitação -->
+        <div id="modalEditarSolicitacao" class="modal-overlay hidden" style="display:none;">
+                <div class="modal-conteudo">
+                        <h2>✏️ Editar Solicitação</h2>
+                        <form id="formEditarSolicitacao">
+                                <input type="text" id="editSolNome" placeholder="Nome completo" required>
+                                <input type="email" id="editSolEmail" placeholder="E-mail" required>
+                                <button type="submit" class="btn-fechar-modal">💾 Salvar Alterações</button>
+                        </form>
+                        <button id="btnFecharEditarSol" class="btn-fechar-modal" style="background:var(--text-tertiary); margin-top:8px;">Cancelar</button>
+                </div>
+        </div>
+
+        <!-- MODAL: Admin enviar mensagem para solicitante -->
+        <div id="modalMsgSolicitacao" class="modal-overlay hidden" style="display:none;">
+                <div class="modal-conteudo">
+                        <h2>💬 Enviar Mensagem</h2>
+                        <p id="textoMsgSolicitacao" style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:14px; text-align:center;"></p>
+                        <form id="formMsgSolicitacao">
+                                <textarea id="inputMsgSolicitacao" placeholder="Escreva sua mensagem..." rows="4" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary); font-size:0.95rem; resize:vertical; margin-bottom:10px;"></textarea>
+                                <button type="submit" class="btn-fechar-modal">📨 Enviar por E-mail</button>
+                        </form>
+                        <button id="btnFecharMsgSol" class="btn-fechar-modal" style="background:var(--text-tertiary); margin-top:8px;">Cancelar</button>
                 </div>
         </div>
 
@@ -779,6 +807,6 @@
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026p"></script>
+        <script src="script.js?v=2026q"></script>
 </body>
 </html>

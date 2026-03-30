@@ -3276,15 +3276,58 @@ body.dark-mode .logo-serie {
 .solicitacao-info strong { font-size: 1rem; color: var(--text-primary); }
 .solicitacao-info p { font-size: 0.82rem; color: var(--text-secondary); margin: 3px 0; }
 .solicitacao-info .sol-msg { font-style: italic; color: var(--text-tertiary); font-size: 0.8rem; }
+.solicitacao-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
 .btn-criar-conta {
   background: linear-gradient(135deg, #2b9348, #1a6b32);
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
+  padding: 7px 12px;
+  font-size: 0.82rem;
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
+  width: 100%;
+  text-align: center;
 }
 .btn-criar-conta:hover { opacity: 0.88; }
+.btn-sol-msg {
+  background: linear-gradient(135deg, #4361ee, #3a0ca3);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+  width: 100%;
+}
+.btn-sol-msg:hover { opacity: 0.88; }
+.btn-sol-edit {
+  background: linear-gradient(135deg, #f77f00, #d62828);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+  width: 100%;
+}
+.btn-sol-edit:hover { opacity: 0.88; }
+.btn-sol-del {
+  background: var(--text-tertiary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+  width: 100%;
+}
+.btn-sol-del:hover { opacity: 0.88; }

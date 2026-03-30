@@ -1435,9 +1435,14 @@ app.patch('/api/mensagens/marcar-lidas/:email', async (req, res) => {
 // ─── SOLICITAÇÕES DE ACESSO DIREÇÃO ──────────────────────────────────────────
 
 app.post('/api/solicitar-direcao', async (req, res) => {
-        const { nome, email, mensagem } = req.body;
+        const { nome, email, senha, mensagem } = req.body;
         if (!nome || !email) return res.status(400).json({ erro: 'Nome e e-mail são obrigatórios.' });
-        const { error } = await supabase.from('solicitacoes_direcao').insert([{ nome, email, mensagem: mensagem || '' }]);
+        const row = { nome, email, mensagem: mensagem || '', tem_senha: false };
+        if (senha) {
+                row.senha_hash = await bcrypt.hash(senha, 10);
+                row.tem_senha = true;
+        }
+        const { error } = await supabase.from('solicitacoes_direcao').insert([row]);
         if (error) return res.status(500).json({ erro: error.message });
         if (process.env.EMAIL_REMETENTE && process.env.EMAIL_SENHA_APP) {
                 try {
@@ -1458,20 +1463,79 @@ app.post('/api/solicitar-direcao', async (req, res) => {
 });
 
 app.get('/api/solicitar-direcao', requireAdminAuth, async (req, res) => {
-        const { data, error } = await supabase.from('solicitacoes_direcao').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('solicitacoes_direcao')
+                .select('id, nome, email, mensagem, tem_senha, created_at')
+                .order('created_at', { ascending: false });
         if (error) return res.status(500).json({ erro: error.message });
         res.json(data || []);
 });
 
+app.put('/api/solicitar-direcao/:id', requireAdminAuth, async (req, res) => {
+        const { nome, email } = req.body;
+        if (!nome || !email) return res.status(400).json({ erro: 'Nome e e-mail são obrigatórios.' });
+        const { error } = await supabase.from('solicitacoes_direcao')
+                .update({ nome, email })
+                .eq('id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true });
+});
+
+app.delete('/api/solicitar-direcao/:id', requireAdminAuth, async (req, res) => {
+        const { error } = await supabase.from('solicitacoes_direcao').delete().eq('id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
+        res.json({ sucesso: true });
+});
+
+app.post('/api/solicitar-direcao/:id/mensagem', requireAdminAuth, async (req, res) => {
+        const { mensagem } = req.body;
+        const { data: sol } = await supabase.from('solicitacoes_direcao').select('nome, email').eq('id', req.params.id).single();
+        if (!sol) return res.status(404).json({ erro: 'Solicitação não encontrada.' });
+        if (!process.env.EMAIL_REMETENTE || !process.env.EMAIL_SENHA_APP)
+                return res.status(500).json({ erro: 'Configuração de e-mail não encontrada.' });
+        try {
+                const t = criarTransporter();
+                await t.sendMail({
+                        from: `"Agenda Escolar Tânia Varella Ferreira" <${process.env.EMAIL_REMETENTE}>`,
+                        to: sol.email,
+                        subject: '📩 Mensagem da Administração — Agenda Escolar',
+                        html: `<h2>Olá, ${sol.nome}!</h2>
+                               <p>Você recebeu uma mensagem da administração referente à sua solicitação de acesso:</p>
+                               <blockquote style="border-left:4px solid #4361ee; padding-left:12px; color:#555;">${mensagem}</blockquote>
+                               <p style="font-size:0.85rem; color:#888;">Este é um e-mail automático da Agenda Escolar Tânia Varella Ferreira.</p>`
+                });
+                res.json({ sucesso: true });
+        } catch (e) {
+                res.status(500).json({ erro: 'Erro ao enviar e-mail: ' + e.message });
+        }
+});
+
 app.post('/api/direcao/criar-conta', requireAdminAuth, async (req, res) => {
         const { id, nome, email, senha } = req.body;
-        if (!nome || !email || !senha) return res.status(400).json({ erro: 'Nome, e-mail e senha são obrigatórios.' });
+        if (!nome || !email) return res.status(400).json({ erro: 'Nome e e-mail são obrigatórios.' });
         const { data: existing } = await supabase.from('Login_Direção').select('E-mail').eq('E-mail', email).single();
         if (existing) return res.status(400).json({ erro: 'Já existe uma conta com este e-mail.' });
-        const senhaHash = await bcrypt.hash(senha, 10);
+
+        let senhaHash;
+        let senhaTexto = senha;
+        if (senha) {
+                senhaHash = await bcrypt.hash(senha, 10);
+        } else if (id) {
+                const { data: sol } = await supabase.from('solicitacoes_direcao')
+                        .select('senha_hash').eq('id', id).single();
+                if (sol?.senha_hash) {
+                        senhaHash = sol.senha_hash;
+                        senhaTexto = null;
+                } else {
+                        return res.status(400).json({ erro: 'Nenhuma senha fornecida e a solicitação não tem senha armazenada.' });
+                }
+        } else {
+                return res.status(400).json({ erro: 'Senha é obrigatória.' });
+        }
+
         const { error } = await supabase.from('Login_Direção').insert([{ 'E-mail': email, 'Senha': senhaHash }]);
         if (error) return res.status(500).json({ erro: error.message });
         if (id) await supabase.from('solicitacoes_direcao').delete().eq('id', id);
+
         if (process.env.EMAIL_REMETENTE && process.env.EMAIL_SENHA_APP) {
                 try {
                         const t = criarTransporter();
@@ -1480,10 +1544,10 @@ app.post('/api/direcao/criar-conta', requireAdminAuth, async (req, res) => {
                                 to: email,
                                 subject: '✅ Sua conta de Direção foi criada!',
                                 html: `<h2>Bem-vindo(a), ${nome}!</h2>
-                                       <p>Sua conta de acesso à Direção foi criada.</p>
-                                       <p><strong>E-mail:</strong> ${email}</p>
-                                       <p><strong>Senha temporária:</strong> ${senha}</p>
-                                       <p>Acesse o sistema e altere sua senha assim que possível.</p>`
+                                       <p>Sua conta de acesso à Direção foi criada com sucesso.</p>
+                                       <p><strong>E-mail de login:</strong> ${email}</p>
+                                       ${senhaTexto ? `<p><strong>Senha:</strong> ${senhaTexto}</p>` : '<p>Use a senha que você definiu na solicitação.</p>'}
+                                       <p>Acesse o sistema pela opção <strong>"Já tenho acesso? Entrar"</strong>.</p>`
                         });
                 } catch {}
         }
