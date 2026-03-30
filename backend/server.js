@@ -185,8 +185,20 @@ function criarTransporter() {
                 auth: {
                         user: process.env.EMAIL_REMETENTE,
                         pass: process.env.EMAIL_SENHA_APP
-                }
+                },
+                connectionTimeout: 8000,
+                greetingTimeout: 8000,
+                socketTimeout: 10000
         });
+}
+
+async function enviarEmailComTimeout(mailOptions, timeoutMs = 12000) {
+        return Promise.race([
+                criarTransporter().sendMail(mailOptions),
+                new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Timeout ao enviar e-mail')), timeoutMs)
+                )
+        ]);
 }
 
 async function enviarCodigoEmail(destinatario, codigo, nome) {
@@ -1493,8 +1505,7 @@ app.post('/api/solicitar-direcao/:id/mensagem', requireAdminAuth, async (req, re
         if (!process.env.EMAIL_REMETENTE || !process.env.EMAIL_SENHA_APP)
                 return res.status(500).json({ erro: 'Configuração de e-mail não encontrada.' });
         try {
-                const t = criarTransporter();
-                await t.sendMail({
+                await enviarEmailComTimeout({
                         from: `"Agenda Escolar Tânia Varella Ferreira" <${process.env.EMAIL_REMETENTE}>`,
                         to: sol.email,
                         subject: '📩 Mensagem da Administração — Agenda Escolar',
@@ -1538,8 +1549,7 @@ app.post('/api/direcao/criar-conta', requireAdminAuth, async (req, res) => {
 
         if (process.env.EMAIL_REMETENTE && process.env.EMAIL_SENHA_APP) {
                 try {
-                        const t = criarTransporter();
-                        await t.sendMail({
+                        await enviarEmailComTimeout({
                                 from: `"Agenda Escolar Tânia Varella Ferreira" <${process.env.EMAIL_REMETENTE}>`,
                                 to: email,
                                 subject: '✅ Sua conta de Direção foi criada!',
@@ -1549,7 +1559,9 @@ app.post('/api/direcao/criar-conta', requireAdminAuth, async (req, res) => {
                                        ${senhaTexto ? `<p><strong>Senha:</strong> ${senhaTexto}</p>` : '<p>Use a senha que você definiu na solicitação.</p>'}
                                        <p>Acesse o sistema pela opção <strong>"Já tenho acesso? Entrar"</strong>.</p>`
                         });
-                } catch {}
+                } catch (emailErr) {
+                        console.warn('⚠️  E-mail de confirmação não enviado:', emailErr.message);
+                }
         }
         res.json({ sucesso: true });
 });
