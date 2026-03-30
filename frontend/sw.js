@@ -1,5 +1,5 @@
-const CACHE_NAME = 'agenda-escolar-v1';
-const STATIC_ASSETS = ['/', '/style.css', '/script.js', '/manifest.json'];
+const CACHE_NAME = 'agenda-escolar-v3';
+const STATIC_ASSETS = ['/manifest.json'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -18,19 +18,54 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  if (e.request.url.includes('/api/') || e.request.method !== 'GET') {
-    e.respondWith(fetch(e.request).catch(() =>
-      new Response(JSON.stringify({ erro: 'Sem conexão. Tente novamente.' }), {
-        headers: { 'Content-Type': 'application/json' }
-      })
-    ));
+  const url = new URL(e.request.url);
+
+  // API calls: always go to network
+  if (url.pathname.startsWith('/api/') || e.request.method !== 'GET') {
+    e.respondWith(
+      fetch(e.request).catch(() =>
+        new Response(JSON.stringify({ erro: 'Sem conexão. Tente novamente.' }), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+    );
     return;
   }
+
+  // HTML (index): always network-first so page updates are immediate
+  if (url.pathname === '/' || url.pathname.endsWith('.html')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Versioned assets (script.js?v=..., style.css?v=...): cache-first (version param ensures freshness)
+  if (url.search.includes('v=')) {
+    e.respondWith(
+      caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+        return res;
+      }))
+    );
+    return;
+  }
+
+  // Everything else: network-first
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-      const clone = res.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-      return res;
-    }))
+    fetch(e.request)
+      .then(res => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
