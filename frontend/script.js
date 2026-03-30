@@ -409,9 +409,68 @@ function sanitizeHTML(str) {
   return div.innerHTML;
 }
 
+const direcaoAcessoBox = document.getElementById("direcaoAcessoBox");
+
 btnDirecao.addEventListener("click", () => {
+  selecaoBox.classList.add("hidden");
+  direcaoAcessoBox.classList.remove("hidden");
+});
+
+document.getElementById("btnVoltarDirecao").addEventListener("click", () => {
+  direcaoAcessoBox.classList.add("hidden");
+  selecaoBox.classList.remove("hidden");
+});
+
+document.getElementById("linkEntrarDirecao").addEventListener("click", (e) => {
+  e.preventDefault();
+  direcaoAcessoBox.classList.add("hidden");
   tipoUsuario = "direcao";
   mostrarTelaLogin();
+});
+
+document.getElementById("btnAbrirSolicitacao").addEventListener("click", () => {
+  const m = document.getElementById("modalSolicitarDirecao");
+  m.classList.remove("hidden");
+  m.style.display = "";
+});
+
+document.getElementById("btnFecharSolicitacao").addEventListener("click", () => {
+  const m = document.getElementById("modalSolicitarDirecao");
+  m.classList.add("hidden");
+  m.style.display = "none";
+});
+
+document.getElementById("formSolicitarDirecao").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nome = document.getElementById("solNome").value.trim();
+  const email = document.getElementById("solEmail").value.trim();
+  const mensagem = document.getElementById("solMensagem").value.trim();
+  const btn = e.target.querySelector("button[type=submit]");
+  btn.disabled = true;
+  btn.textContent = "Enviando...";
+  try {
+    const res = await fetch("/api/solicitar-direcao", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, email, mensagem })
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      const m = document.getElementById("modalSolicitarDirecao");
+      m.classList.add("hidden");
+      m.style.display = "none";
+      e.target.reset();
+      direcaoAcessoBox.classList.add("hidden");
+      selecaoBox.classList.remove("hidden");
+      showToast("Solicitação enviada! O administrador foi notificado.", "success", "Solicitação Enviada");
+    } else {
+      showToast(data.erro || "Erro ao enviar solicitação.", "error");
+    }
+  } catch {
+    showToast("Erro ao enviar. Tente novamente.", "error");
+  }
+  btn.disabled = false;
+  btn.textContent = "📨 Enviar Solicitação";
 });
 
 btnAluno.addEventListener("click", () => {
@@ -434,10 +493,15 @@ adminZonaInvisivel.addEventListener("click", () => {
 
 btnVoltar.addEventListener("click", () => {
   loginBox.classList.add("hidden");
-  selecaoBox.classList.remove("hidden");
   loginForm.reset();
   modoCadastro = false;
-  tipoUsuario = null;
+  if (tipoUsuario === "direcao") {
+    tipoUsuario = null;
+    direcaoAcessoBox.classList.remove("hidden");
+  } else {
+    tipoUsuario = null;
+    selecaoBox.classList.remove("hidden");
+  }
 });
 
 const btnLoginGoogle = document.getElementById('btnLoginGoogle');
@@ -872,6 +936,8 @@ async function logarDirecao(email,senha){
 }
 
 async function mostrarPainelAluno(aluno){
+  selecaoBox.classList.add("hidden");
+  direcaoAcessoBox.classList.add("hidden");
   loginBox.classList.add("hidden");
   alunoPanel.classList.remove("hidden");
   sessionStorage.setItem('alunoLogado', JSON.stringify(aluno));
@@ -942,6 +1008,8 @@ async function mostrarCardapioDoDia(){
 }
 
 function mostrarPainelAdmin(){
+  selecaoBox.classList.add("hidden");
+  direcaoAcessoBox.classList.add("hidden");
   loginBox.classList.add("hidden");
   adminPanel.classList.remove("hidden");
   
@@ -962,6 +1030,7 @@ function mostrarPainelAdmin(){
   
   configurarNavegacaoAdmin();
   atualizarListaAlunos();
+  if (tipoAdmin === 'admin') verificarSolicitacoesPendentes();
 }
 
 function configurarNavegacaoAdmin(){
@@ -1014,11 +1083,111 @@ function configurarNavegacaoAdmin(){
           case 'enquetes':
             carregarEnquetesAdmin();
             break;
+          case 'solicitacoes':
+            carregarSolicitacoesDirecao();
+            break;
         }
       }
     });
   });
 }
+
+// ─── SOLICITAÇÕES DE ACESSO DIREÇÃO ───────────────────────────────────────────
+
+let _solicitacaoAtual = null;
+
+async function verificarSolicitacoesPendentes() {
+  try {
+    const res = await adminFetch('/api/solicitar-direcao');
+    const data = await res.json();
+    const total = (data || []).length;
+    const badge = document.getElementById('badgeSolicitacoes');
+    if (badge) {
+      if (total > 0) {
+        badge.textContent = total;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+  } catch {}
+}
+
+async function carregarSolicitacoesDirecao() {
+  const container = document.getElementById('solicitacoesContainer');
+  container.innerHTML = '<p>Carregando...</p>';
+  try {
+    const res = await adminFetch('/api/solicitar-direcao');
+    const lista = await res.json();
+    if (!lista || lista.length === 0) {
+      container.innerHTML = '<p style="color:var(--text-tertiary); text-align:center; padding:20px;">Nenhuma solicitação pendente.</p>';
+      return;
+    }
+    container.innerHTML = lista.map(s => `
+      <div class="solicitacao-card" id="sol-card-${s.id}">
+        <div class="solicitacao-info">
+          <strong>${escapeHtml(s.nome)}</strong>
+          <p>✉️ ${escapeHtml(s.email)}</p>
+          ${s.mensagem ? `<p class="sol-msg">"${escapeHtml(s.mensagem)}"</p>` : ''}
+          <p style="font-size:0.75rem; color:var(--text-tertiary);">📅 ${new Date(s.created_at).toLocaleString('pt-BR')}</p>
+        </div>
+        <button class="btn-criar-conta" onclick="abrirModalCriarContaDirecao(${s.id}, '${escapeHtml(s.nome)}', '${escapeHtml(s.email)}')">
+          👤 Criar Conta
+        </button>
+      </div>
+    `).join('');
+  } catch {
+    container.innerHTML = '<p style="color:var(--text-tertiary); text-align:center;">Erro ao carregar solicitações.</p>';
+  }
+}
+
+function abrirModalCriarContaDirecao(id, nome, email) {
+  _solicitacaoAtual = { id, nome, email };
+  document.getElementById('textoCriarContaDirecao').textContent = `Criar conta para ${nome} (${email}). Defina uma senha temporária — o login será enviado por e-mail.`;
+  document.getElementById('novaSenhaDirecao').value = '';
+  const m = document.getElementById('modalCriarContaDirecao');
+  m.classList.remove('hidden');
+  m.style.display = '';
+}
+
+document.getElementById('btnFecharCriarConta').addEventListener('click', () => {
+  const m = document.getElementById('modalCriarContaDirecao');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+  _solicitacaoAtual = null;
+});
+
+document.getElementById('formCriarContaDirecao').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!_solicitacaoAtual) return;
+  const senha = document.getElementById('novaSenhaDirecao').value.trim();
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  btn.textContent = 'Criando...';
+  try {
+    const res = await adminFetch('/api/direcao/criar-conta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ..._solicitacaoAtual, senha })
+    });
+    const data = await res.json();
+    if (data.sucesso) {
+      const m = document.getElementById('modalCriarContaDirecao');
+      m.classList.add('hidden');
+      m.style.display = 'none';
+      document.getElementById(`sol-card-${_solicitacaoAtual.id}`)?.remove();
+      _solicitacaoAtual = null;
+      showToast('Conta criada e login enviado por e-mail!', 'success', 'Conta Criada');
+      verificarSolicitacoesPendentes();
+    } else {
+      showToast(data.erro || 'Erro ao criar conta.', 'error');
+    }
+  } catch {
+    showToast('Erro ao criar conta. Tente novamente.', 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '✅ Criar Conta e Enviar Login';
+});
 
 async function carregarLogs(){
   const container = document.getElementById('containerLogs');

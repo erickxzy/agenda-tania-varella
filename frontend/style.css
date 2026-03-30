@@ -3248,3 +3248,43 @@ body.dark-mode .logo-serie {
   font-size: 0.9rem;
   resize: vertical;
 }
+
+.badge-sol {
+  display: inline-block;
+  background: #e63946;
+  color: #fff;
+  border-radius: 50px;
+  padding: 1px 7px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.badge-sol.hidden { display: none; }
+
+.solicitacao-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.solicitacao-info { flex: 1; }
+.solicitacao-info strong { font-size: 1rem; color: var(--text-primary); }
+.solicitacao-info p { font-size: 0.82rem; color: var(--text-secondary); margin: 3px 0; }
+.solicitacao-info .sol-msg { font-style: italic; color: var(--text-tertiary); font-size: 0.8rem; }
+.btn-criar-conta {
+  background: linear-gradient(135deg, #2b9348, #1a6b32);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-criar-conta:hover { opacity: 0.88; }

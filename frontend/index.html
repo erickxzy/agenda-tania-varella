@@ -15,7 +15,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
         <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="stylesheet" href="style.css?v=2026m">
+        <link rel="stylesheet" href="style.css?v=2026n">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -44,6 +44,56 @@
                                 <span class="icone">🧑‍🎓</span>
                                 <span class="texto">Aluno</span>
                         </button>
+                </div>
+        </div>
+
+        <!-- TELA: Direção - Acesso Restrito -->
+        <div id="direcaoAcessoBox" class="card selecao-card hidden">
+                <button class="btn-voltar" id="btnVoltarDirecao">← Voltar</button>
+                <div style="text-align:center; margin-bottom:18px;">
+                        <span style="font-size:3rem;">🔐</span>
+                        <h2 style="margin:10px 0 6px;">Acesso — Direção</h2>
+                        <p style="color:var(--text-tertiary); font-size:0.92rem; line-height:1.6; max-width:320px; margin:0 auto;">
+                                Esta área é exclusiva para membros autorizados da equipe escolar.<br>
+                                Para ter acesso, solicite ao administrador do sistema.
+                        </p>
+                </div>
+                <button id="btnAbrirSolicitacao" class="btn-opcao" style="width:100%; max-width:320px; margin:0 auto 14px; background:linear-gradient(135deg,#4361ee,#3a0ca3);">
+                        <span class="icone">📩</span>
+                        <span class="texto">Solicitar Acesso</span>
+                </button>
+                <p style="text-align:center; font-size:0.88rem; color:var(--text-tertiary);">
+                        Já tem uma conta? <a href="#" id="linkEntrarDirecao" style="color:var(--primary-color); font-weight:600;">Entrar aqui →</a>
+                </p>
+        </div>
+
+        <!-- MODAL: Formulário de Solicitação -->
+        <div id="modalSolicitarDirecao" class="modal-overlay hidden" style="display:none;">
+                <div class="modal-conteudo">
+                        <h2>📩 Solicitar Acesso — Direção</h2>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:18px; text-align:center;">
+                                Preencha o formulário. O administrador receberá sua solicitação e criará seu acesso.
+                        </p>
+                        <form id="formSolicitarDirecao">
+                                <input type="text" id="solNome" placeholder="Seu nome completo" required>
+                                <input type="email" id="solEmail" placeholder="Seu e-mail" required>
+                                <textarea id="solMensagem" placeholder="Mensagem (opcional)" rows="3" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary); font-size:0.95rem; resize:vertical; margin-bottom:10px;"></textarea>
+                                <button type="submit" class="btn-fechar-modal">📨 Enviar Solicitação</button>
+                        </form>
+                        <button id="btnFecharSolicitacao" class="btn-fechar-modal" style="background:var(--text-tertiary); margin-top:8px;">Cancelar</button>
+                </div>
+        </div>
+
+        <!-- MODAL: Admin criar conta Direção -->
+        <div id="modalCriarContaDirecao" class="modal-overlay hidden" style="display:none;">
+                <div class="modal-conteudo">
+                        <h2>👤 Criar Conta — Direção</h2>
+                        <p id="textoCriarContaDirecao" style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:18px; text-align:center;"></p>
+                        <form id="formCriarContaDirecao">
+                                <input type="password" id="novaSenhaDirecao" placeholder="Criar senha para esta conta" required minlength="6">
+                                <button type="submit" class="btn-fechar-modal">✅ Criar Conta e Enviar Login</button>
+                        </form>
+                        <button id="btnFecharCriarConta" class="btn-fechar-modal" style="background:var(--text-tertiary); margin-top:8px;">Cancelar</button>
                 </div>
         </div>
 
@@ -220,6 +270,10 @@
                                 <span class="categoria-icone">💬</span>
                                 <span class="categoria-texto">Mensagens</span>
                         </button>
+                        <button class="btn-categoria" id="btnCategoriaSolicitacoes" data-secao="solicitacoes">
+                                <span class="categoria-icone">🔔</span>
+                                <span class="categoria-texto">Solicitações <span id="badgeSolicitacoes" class="badge-sol hidden">0</span></span>
+                        </button>
                 </div>
 
                 <div id="secao-turmas" class="admin-secao active">
@@ -383,6 +437,15 @@
                         <p style="font-size:0.85rem; color:var(--text-tertiary); margin-bottom:14px;">Selecione um aluno na aba Turmas e clique em "💬 Mensagem" para iniciar conversa.</p>
                         <div id="mensagensAdminContainer">
                                 <p style="color:var(--text-tertiary); text-align:center; padding:20px;">Selecione um aluno para ver as mensagens.</p>
+                        </div>
+                </div>
+
+                <!-- ── SEÇÃO SOLICITAÇÕES (ADMIN) ── -->
+                <div id="secao-solicitacoes" class="admin-secao hidden">
+                        <h3>🔔 Solicitações de Acesso — Direção</h3>
+                        <p style="font-size:0.85rem; color:var(--text-tertiary); margin-bottom:14px;">Pessoas que solicitaram uma conta de Direção. Crie a conta e o login será enviado por e-mail.</p>
+                        <div id="solicitacoesContainer">
+                                <p style="color:var(--text-tertiary); text-align:center; padding:20px;">Nenhuma solicitação pendente.</p>
                         </div>
                 </div>
         </div>
@@ -716,6 +779,6 @@
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026m"></script>
+        <script src="script.js?v=2026n"></script>
 </body>
 </html>
