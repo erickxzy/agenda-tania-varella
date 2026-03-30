@@ -192,7 +192,7 @@ function criarTransporter(fast = false) {
         });
 }
 
-async function enviarEmailComTimeout(mailOptions, timeoutMs = 12000, fast = false) {
+async function enviarEmailComTimeout(mailOptions, timeoutMs = 5000, fast = true) {
         return Promise.race([
                 criarTransporter(fast).sendMail(mailOptions),
                 new Promise((_, reject) =>
