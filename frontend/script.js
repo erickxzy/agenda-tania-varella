@@ -1118,26 +1118,36 @@ async function carregarSolicitacoesDirecao() {
   container.innerHTML = '<p>Carregando...</p>';
   try {
     const res = await adminFetch('/api/solicitar-direcao');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const lista = await res.json();
-    if (!lista || lista.length === 0) {
+    if (!Array.isArray(lista) || lista.length === 0) {
       container.innerHTML = '<p style="color:var(--text-tertiary); text-align:center; padding:20px;">Nenhuma solicitação pendente.</p>';
       return;
     }
-    container.innerHTML = lista.map(s => `
-      <div class="solicitacao-card" id="sol-card-${s.id}">
-        <div class="solicitacao-info">
-          <strong>${escapeHtml(s.nome)}</strong>
-          <p>✉️ ${escapeHtml(s.email)}</p>
-          ${s.mensagem ? `<p class="sol-msg">"${escapeHtml(s.mensagem)}"</p>` : ''}
-          <p style="font-size:0.75rem; color:var(--text-tertiary);">📅 ${new Date(s.created_at).toLocaleString('pt-BR')}</p>
-        </div>
-        <button class="btn-criar-conta" onclick="abrirModalCriarContaDirecao(${s.id}, '${escapeHtml(s.nome)}', '${escapeHtml(s.email)}')">
-          👤 Criar Conta
-        </button>
-      </div>
-    `).join('');
-  } catch {
-    container.innerHTML = '<p style="color:var(--text-tertiary); text-align:center;">Erro ao carregar solicitações.</p>';
+    container.innerHTML = '';
+    lista.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'solicitacao-card';
+      card.id = 'sol-card-' + s.id;
+
+      const info = document.createElement('div');
+      info.className = 'solicitacao-info';
+      info.innerHTML = `<strong>${escapeHtml(s.nome)}</strong>
+        <p>✉️ ${escapeHtml(s.email)}</p>
+        ${s.mensagem ? `<p class="sol-msg">"${escapeHtml(s.mensagem)}"</p>` : ''}
+        <p style="font-size:0.75rem;color:var(--text-tertiary);">📅 ${new Date(s.created_at).toLocaleString('pt-BR')}</p>`;
+
+      const btn = document.createElement('button');
+      btn.className = 'btn-criar-conta';
+      btn.textContent = '👤 Criar Conta';
+      btn.addEventListener('click', () => abrirModalCriarContaDirecao(s.id, s.nome, s.email));
+
+      card.appendChild(info);
+      card.appendChild(btn);
+      container.appendChild(card);
+    });
+  } catch(err) {
+    container.innerHTML = `<p style="color:var(--text-tertiary); text-align:center;">Erro ao carregar solicitações: ${err.message}</p>`;
   }
 }
 
