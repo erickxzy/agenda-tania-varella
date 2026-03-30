@@ -542,22 +542,22 @@ app.post('/api/login', async (req, res) => {
                 });
         }
 
-        // Aluno comum: envia código de verificação por e-mail
-        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-        loginsPendentes.set(email, {
-                alunoData: aluno,
-                codigo,
-                expires: Date.now() + 10 * 60 * 1000 // 10 minutos
+        // Aluno comum: login direto após validação de senha
+        const ipAddress = req.ip || req.connection.remoteAddress || 'desconhecido';
+        const userAgent = req.get('User-Agent') || 'desconhecido';
+        await supabase.from('Logs').insert({
+                aluno_id: aluno.id,
+                nome: aluno.nome,
+                email: aluno.email,
+                turma: aluno.serie,
+                ip_address: ipAddress,
+                user_agent: userAgent
         });
 
-        try {
-                await enviarCodigoLoginEmail(email, codigo, aluno.nome);
-        } catch (emailErr) {
-                console.error('Erro ao enviar código de login:', emailErr.message);
-                return res.status(500).json({ sucesso: false, erro: 'Erro ao enviar código de verificação. Tente novamente.' });
-        }
-
-        return res.json({ sucesso: true, pendente: true, email });
+        return res.json({
+                sucesso: true,
+                usuario: { id: aluno.id, nome: aluno.nome, email: aluno.email, serie: aluno.serie }
+        });
 });
 
 // ─── CONFIRMAR LOGIN ALUNO (valida código) ────────────────────────────────────

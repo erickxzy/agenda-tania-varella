@@ -871,14 +871,14 @@ async function logarAluno(email,senha){
     const data = await res.json();
 
     if(data.sucesso && data.pendente) {
-      // Aguarda código de verificação por e-mail
+      // Cadastro ainda pendente (não deve ocorrer no login normal)
       dadosLoginPendente = { email, tipo: 'aluno' };
       showToast('Código enviado! Verifique seu e-mail.', 'info', '🔐 Verificação de Login');
       abrirModalVerificacao(email, 'login');
-    } else if(data.sucesso) {
-      // Admin: entra direto
+    } else if(data.sucesso && data.token) {
+      // Admin: entra direto com token
       usuarioAtual = data.usuario;
-      if(data.token) sessionStorage.setItem('adminToken', data.token);
+      sessionStorage.setItem('adminToken', data.token);
       tipoAdmin = data.tipoAdmin || 'admin';
       window._adminEmail = data.usuario?.email || 'admin@sistema.local';
       sessionStorage.setItem('tipoAdmin', tipoAdmin);
@@ -886,8 +886,12 @@ async function logarAluno(email,senha){
       sessionStorage.setItem('adminEmail', window._adminEmail);
       mostrarPainelAdmin();
       showToast('Bem-vindo, ' + data.usuario.nome + '!', 'success', 'Login Realizado');
+    } else if(data.sucesso && data.usuario) {
+      // Aluno: login direto instantâneo
+      mostrarPainelAluno(data.usuario);
+      showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Login Realizado');
     } else {
-      showToast(data.erro, 'error');
+      showToast(data.erro || 'Erro ao fazer login.', 'error');
     }
   } catch(error) {
     showToast('Erro ao fazer login!', 'error');
