@@ -936,14 +936,18 @@ async function logarDirecao(email,senha){
       dadosLoginPendente = { email, tipo: 'direcao' };
       showToast('Código enviado! Verifique seu e-mail.', 'info', '🔐 Verificação de Login');
       abrirModalVerificacao(email, 'login');
-    } else if(data.sucesso) {
+    } else if(data.sucesso && data.token) {
       usuarioAtual = data.usuario;
-      if(data.token) sessionStorage.setItem('adminToken', data.token);
+      sessionStorage.setItem('adminToken', data.token);
       tipoAdmin = data.tipoAdmin || 'direcao';
       mostrarPainelAdmin();
-      showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Login Realizado');
+      if(data.emailFalhou) {
+        showToast('E-mail de verificação indisponível. Acesso liberado pela senha.', 'info', '⚠️ Aviso');
+      } else {
+        showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Login Realizado');
+      }
     } else {
-      showToast(data.erro, 'error');
+      showToast(data.erro || 'Erro ao fazer login.', 'error');
     }
   } catch(error) {
     showToast('Erro ao fazer login!', 'error');

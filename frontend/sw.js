@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agenda-escolar-v5';
+const CACHE_NAME = 'agenda-escolar-v6';
 const STATIC_ASSETS = ['/manifest.json'];
 
 self.addEventListener('install', (e) => {

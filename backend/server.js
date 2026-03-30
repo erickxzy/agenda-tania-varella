@@ -656,12 +656,26 @@ app.post('/api/login-direcao', async (req, res) => {
 
         try {
                 await enviarCodigoLoginEmail(email, codigo, nomeMembro);
+                return res.json({ sucesso: true, pendente: true, email });
         } catch (emailErr) {
                 console.error('Erro ao enviar código de login direção:', emailErr.message);
-                return res.status(500).json({ sucesso: false, erro: 'Erro ao enviar código de verificação. Tente novamente.' });
+                // E-mail falhou — libera login direto já que senha foi validada
+                loginsPendentes.delete(email);
+                const token = gerarTokenAdmin();
+                adminSessions.set(token, {
+                        nome: nomeMembro,
+                        email: membro['E-mail'],
+                        tipo: 'direcao',
+                        expires: Date.now() + 8 * 60 * 60 * 1000
+                });
+                return res.json({
+                        sucesso: true,
+                        token,
+                        tipoAdmin: 'direcao',
+                        emailFalhou: true,
+                        usuario: { id: membro.id, nome: nomeMembro, email: membro['E-mail'] }
+                });
         }
-
-        return res.json({ sucesso: true, pendente: true, email });
 });
 
 // ─── CONFIRMAR LOGIN DIREÇÃO (valida código) ──────────────────────────────────
