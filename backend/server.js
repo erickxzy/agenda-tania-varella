@@ -646,36 +646,21 @@ app.post('/api/login-direcao', async (req, res) => {
 
         const nomeMembro = membro.nome || email.split('@')[0];
 
-        // Envia código de verificação por e-mail antes de liberar o painel
-        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-        loginsPendentes.set(email, {
-                direcaoData: { id: membro.id, nome: nomeMembro, email: membro['E-mail'] },
-                codigo,
-                expires: Date.now() + 10 * 60 * 1000 // 10 minutos
+        // Login direto — senha já validada, sem necessidade de 2FA
+        const token = gerarTokenAdmin();
+        adminSessions.set(token, {
+                nome: nomeMembro,
+                email: membro['E-mail'],
+                tipo: 'direcao',
+                expires: Date.now() + 8 * 60 * 60 * 1000
         });
 
-        try {
-                await enviarCodigoLoginEmail(email, codigo, nomeMembro);
-                return res.json({ sucesso: true, pendente: true, email });
-        } catch (emailErr) {
-                console.error('Erro ao enviar código de login direção:', emailErr.message);
-                // E-mail falhou — libera login direto já que senha foi validada
-                loginsPendentes.delete(email);
-                const token = gerarTokenAdmin();
-                adminSessions.set(token, {
-                        nome: nomeMembro,
-                        email: membro['E-mail'],
-                        tipo: 'direcao',
-                        expires: Date.now() + 8 * 60 * 60 * 1000
-                });
-                return res.json({
-                        sucesso: true,
-                        token,
-                        tipoAdmin: 'direcao',
-                        emailFalhou: true,
-                        usuario: { id: membro.id, nome: nomeMembro, email: membro['E-mail'] }
-                });
-        }
+        return res.json({
+                sucesso: true,
+                token,
+                tipoAdmin: 'direcao',
+                usuario: { id: membro.id, nome: nomeMembro, email: membro['E-mail'] }
+        });
 });
 
 // ─── CONFIRMAR LOGIN DIREÇÃO (valida código) ──────────────────────────────────
