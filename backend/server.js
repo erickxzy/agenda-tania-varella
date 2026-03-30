@@ -1566,8 +1566,111 @@ app.post('/api/direcao/criar-conta', requireAdminAuth, async (req, res) => {
         res.json({ sucesso: true });
 });
 
+// ════════════════════════════════════════════════════════
+// ─── ENDPOINT COMBINADO — PAINEL ALUNO ───────────────────
+// ════════════════════════════════════════════════════════
+app.get('/api/painel-aluno/:serie/:email', async (req, res) => {
+        const { serie, email } = req.params;
+        const diasSemana = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+        const diaSemana = diasSemana[new Date().getDay()];
+
+        try {
+                const [
+                        { data: eventos },
+                        { data: cardapio },
+                        { data: avisos },
+                        { data: provasTurma },
+                        { data: provasTodas },
+                        { data: tarefasTurma },
+                        { data: tarefasTodas },
+                        { data: tarefasConcluidas },
+                        { data: duvidas },
+                        { data: enquetesTurma },
+                        { data: enquetesTodas },
+                        { data: boletins },
+                        { data: mensagens },
+                        { data: naoLidas },
+                ] = await Promise.all([
+                        supabase.from('Conteudos').select('*').eq('serie', serie).eq('ativo', true).order('data_evento', { ascending: true }),
+                        supabase.from('Cardapio').select('*').eq('dia_semana', diaSemana).single(),
+                        supabase.from('Avisos').select('*').order('created_at', { ascending: false }).limit(20),
+                        supabase.from('provas').select('*').eq('turma', serie).order('data', { ascending: true }),
+                        supabase.from('provas').select('*').eq('turma', 'Todas').order('data', { ascending: true }),
+                        supabase.from('tarefas').select('*').eq('turma', serie).order('prazo', { ascending: true }),
+                        supabase.from('tarefas').select('*').eq('turma', 'Todas').order('prazo', { ascending: true }),
+                        supabase.from('tarefas_concluidas').select('tarefa_id').eq('aluno_email', email),
+                        supabase.from('duvidas').select('*').eq('turma', serie).order('created_at', { ascending: true }),
+                        supabase.from('enquetes').select('*').eq('turma', serie).eq('ativa', true).order('created_at', { ascending: false }),
+                        supabase.from('enquetes').select('*').eq('turma', 'Todas').eq('ativa', true).order('created_at', { ascending: false }),
+                        supabase.from('boletins').select('*').eq('aluno_email', email).order('created_at', { ascending: false }),
+                        supabase.from('mensagens').select('*').eq('aluno_email', email).order('created_at', { ascending: true }),
+                        supabase.from('mensagens').select('id').eq('aluno_email', email).eq('lida', false),
+                ]);
+
+                const todasTarefas = [...(tarefasTurma || []), ...(tarefasTodas || [])].sort((a, b) => new Date(a.prazo) - new Date(b.prazo));
+                const tarefaIds = todasTarefas.map(t => t.id);
+                const todasEnquetes = [...(enquetesTurma || []), ...(enquetesTodas || [])];
+                const enqueteIds = todasEnquetes.map(e => e.id);
+
+                const [{ data: concluidasRanking }, { data: todosVotos }] = await Promise.all([
+                        tarefaIds.length > 0
+                                ? supabase.from('tarefas_concluidas').select('aluno_nome, aluno_email').in('tarefa_id', tarefaIds)
+                                : Promise.resolve({ data: [] }),
+                        enqueteIds.length > 0
+                                ? supabase.from('votos').select('enquete_id, opcao').in('enquete_id', enqueteIds)
+                                : Promise.resolve({ data: [] }),
+                ]);
+
+                const contagem = {};
+                (concluidasRanking || []).forEach(item => {
+                        const key = item.aluno_nome || item.aluno_email;
+                        contagem[key] = (contagem[key] || 0) + 1;
+                });
+                const ranking = Object.entries(contagem)
+                        .map(([nome, total]) => ({ nome, total }))
+                        .sort((a, b) => b.total - a.total)
+                        .slice(0, 10);
+
+                const enquetesComResultados = todasEnquetes.map(e => {
+                        const votosEnquete = (todosVotos || []).filter(v => v.enquete_id === e.id);
+                        const cnt = {};
+                        votosEnquete.forEach(v => { cnt[v.opcao] = (cnt[v.opcao] || 0) + 1; });
+                        return { ...e, resultados: { total: votosEnquete.length, contagem: cnt } };
+                });
+
+                if ((naoLidas || []).length > 0) {
+                        supabase.from('mensagens').update({ lida: true }).eq('aluno_email', email).eq('lida', false).then(() => {});
+                }
+
+                res.json({
+                        eventos: eventos || [],
+                        cardapio: cardapio || null,
+                        avisos: avisos || [],
+                        provas: [...(provasTurma || []), ...(provasTodas || [])].sort((a, b) => new Date(a.data) - new Date(b.data)),
+                        tarefas: todasTarefas,
+                        tarefasConcluidas: (tarefasConcluidas || []).map(t => t.tarefa_id),
+                        duvidas: duvidas || [],
+                        enquetes: enquetesComResultados,
+                        boletins: boletins || [],
+                        mensagens: mensagens || [],
+                        naoLidasCount: (naoLidas || []).length,
+                        ranking,
+                });
+        } catch (err) {
+                console.error('Erro em /api/painel-aluno:', err.message);
+                res.status(500).json({ erro: 'Erro ao carregar painel.' });
+        }
+});
+
+// ─── PING (keep-alive) ────────────────────────────────────
+app.get('/api/ping', (req, res) => res.json({ ok: true }));
+
 app.listen(PORT, '0.0.0.0', () => {
         console.log(`✅ Servidor rodando na porta ${PORT}`);
         console.log(`☁️  Banco de dados: Supabase`);
         console.log(`🔐 Autenticação ativa`);
+
+        setInterval(() => {
+                require('http').get(`http://localhost:${PORT}/api/ping`).on('error', () => {});
+        }, 4 * 60 * 1000);
 });

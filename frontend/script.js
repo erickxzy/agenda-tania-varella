@@ -962,38 +962,45 @@ async function mostrarPainelAluno(aluno){
   turmaElement.innerHTML = `📚 Série: ${aluno.serie}`;
 
   const lista=document.getElementById("listaEventos");
-  lista.innerHTML="<p>Carregando eventos...</p>";
+  lista.innerHTML="<p>Carregando...</p>";
 
   try {
-    const res = await fetch(`/api/eventos/${encodeURIComponent(aluno.serie)}`);
-    const eventos = await res.json();
+    const res = await fetch(`/api/painel-aluno/${encodeURIComponent(aluno.serie)}/${encodeURIComponent(aluno.email)}`);
+    const d = await res.json();
 
-    lista.innerHTML="";
-    eventos.forEach(evento=>{
-      const li=document.createElement("li");
-      li.textContent=evento.descricao;
-      lista.appendChild(li);
-    });
+    lista.innerHTML = d.eventos.length
+      ? d.eventos.map(e => `<li>${e.descricao}</li>`).join('')
+      : '<li>Nenhum conteúdo cadastrado.</li>';
+
+    mostrarCardapioDoDia(d.cardapio);
+    carregarNotificacoes(d.avisos);
+    carregarProvasAluno(aluno.serie, d.provas);
+    carregarTarefasAluno(aluno, d.tarefas, d.tarefasConcluidas);
+    carregarDuvidasAluno(aluno.serie, d.duvidas);
+    carregarEnquetesAluno(aluno, d.enquetes);
+    carregarRankingTarefas(aluno.serie, d.ranking);
+    carregarBoletinsAluno(aluno, d.boletins);
+    verificarMensagensNaoLidas(aluno.email, d.naoLidasCount);
+    carregarMensagensAluno(aluno, d.mensagens);
   } catch(error) {
-    lista.innerHTML="<p>Erro ao carregar eventos</p>";
+    lista.innerHTML="<p>Erro ao carregar painel</p>";
+    mostrarCardapioDoDia();
+    carregarNotificacoes();
+    carregarProvasAluno(aluno.serie);
+    carregarTarefasAluno(aluno);
+    carregarDuvidasAluno(aluno.serie);
+    carregarEnquetesAluno(aluno);
+    carregarRankingTarefas(aluno.serie);
+    carregarBoletinsAluno(aluno);
+    verificarMensagensNaoLidas(aluno.email);
+    carregarMensagensAluno(aluno);
   }
-
-  mostrarCardapioDoDia();
-  carregarNotificacoes();
-  carregarProvasAluno(aluno.serie);
-  carregarTarefasAluno(aluno);
-  carregarDuvidasAluno(aluno.serie);
-  carregarEnquetesAluno(aluno);
-  carregarRankingTarefas(aluno.serie);
-  carregarBoletinsAluno(aluno);
-  verificarMensagensNaoLidas(aluno.email);
-  carregarMensagensAluno(aluno);
 
   document.getElementById('btnEnviarDuvida').onclick = () => enviarDuvidaAluno(aluno);
 }
 
 
-async function mostrarCardapioDoDia(){
+async function mostrarCardapioDoDia(cardapioPreCarregado){
   const cardapioDiv=document.getElementById("cardapioDoDia");
   const hoje=new Date();
   const diasSemana=["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
@@ -1003,8 +1010,9 @@ async function mostrarCardapioDoDia(){
   cardapioDiv.innerHTML="<p>Carregando cardápio...</p>";
 
   try {
-    const res = await fetch(`/api/cardapio/${encodeURIComponent(diaSemana)}`);
-    const menuHoje = await res.json();
+    const menuHoje = cardapioPreCarregado !== undefined
+      ? cardapioPreCarregado
+      : await fetch(`/api/cardapio/${encodeURIComponent(diaSemana)}`).then(r => r.json());
 
     cardapioDiv.innerHTML=`
       <div class="card cardapio-card">
@@ -1648,19 +1656,24 @@ document.getElementById('btnCarregarRankingAdmin').addEventListener('click', asy
 // ══════════════════════════════════════════════════════════════
 // ─── MENSAGENS DO ALUNO (PAINEL ALUNO) ───────────────────────
 // ══════════════════════════════════════════════════════════════
-async function carregarMensagensAluno(aluno) {
+async function carregarMensagensAluno(aluno, msgsPreCarregadas) {
   const container = document.getElementById('mensagensAlunoContainer');
   const formResposta = document.getElementById('formRespostaAluno');
   if (!container) return;
   container.innerHTML = '<p style="color:var(--text-tertiary); font-size:0.85rem; text-align:center;">Carregando...</p>';
 
   try {
-    await fetch(`/api/mensagens/marcar-lidas/${encodeURIComponent(aluno.email)}`, { method: 'PATCH' });
-    const badge = document.getElementById('badgeMsgAluno');
-    if (badge) { badge.textContent = ''; badge.classList.add('hidden'); }
-
-    const res = await fetch(`/api/mensagens/aluno/${encodeURIComponent(aluno.email)}`);
-    const msgs = await res.json();
+    let msgs;
+    if (msgsPreCarregadas !== undefined) {
+      msgs = msgsPreCarregadas;
+      const badge = document.getElementById('badgeMsgAluno');
+      if (badge) { badge.textContent = ''; badge.classList.add('hidden'); }
+    } else {
+      await fetch(`/api/mensagens/marcar-lidas/${encodeURIComponent(aluno.email)}`, { method: 'PATCH' });
+      const badge = document.getElementById('badgeMsgAluno');
+      if (badge) { badge.textContent = ''; badge.classList.add('hidden'); }
+      msgs = await fetch(`/api/mensagens/aluno/${encodeURIComponent(aluno.email)}`).then(r => r.json());
+    }
 
     if (!msgs.length) {
       container.innerHTML = '<p style="color:var(--text-tertiary); font-size:0.85rem; text-align:center;">Nenhuma mensagem ainda.</p>';
@@ -1702,13 +1715,18 @@ async function carregarMensagensAluno(aluno) {
   }
 }
 
-async function verificarMensagensNaoLidas(email) {
+async function verificarMensagensNaoLidas(email, contPreCarregada) {
   try {
-    const res = await fetch(`/api/mensagens/nao-lidas/${encodeURIComponent(email)}`);
-    const data = await res.json();
+    let total;
+    if (contPreCarregada !== undefined) {
+      total = contPreCarregada;
+    } else {
+      const data = await fetch(`/api/mensagens/nao-lidas/${encodeURIComponent(email)}`).then(r => r.json());
+      total = data.total;
+    }
     const badge = document.getElementById('badgeMsgAluno');
-    if (badge && data.total > 0) {
-      badge.textContent = data.total;
+    if (badge && total > 0) {
+      badge.textContent = total;
       badge.classList.remove('hidden');
     }
   } catch {}
@@ -2245,10 +2263,11 @@ document.addEventListener("click", (e) => {
   }
 });
 
-async function carregarNotificacoes() {
+async function carregarNotificacoes(avisosPreCarregados) {
   try {
-    const res = await fetch('/api/avisos');
-    const avisos = await res.json();
+    const avisos = avisosPreCarregados !== undefined
+      ? avisosPreCarregados
+      : await fetch('/api/avisos').then(r => r.json());
     
     const avisosLimpados = JSON.parse(localStorage.getItem('avisosLimpados') || '[]');
     const avisosFiltrados = avisos.filter(aviso => !avisosLimpados.includes(aviso.id));
@@ -2522,14 +2541,20 @@ function showModalInput(titulo, label, placeholder = '') {
 // ═══════════════════════════════════════════════════════
 // ─── CALENDÁRIO DE PROVAS ───────────────────────────────
 // ═══════════════════════════════════════════════════════
-async function carregarProvasAluno(serie) {
+async function carregarProvasAluno(serie, provasPreCarregadas) {
   const container = document.getElementById('provasAluno');
   container.innerHTML = '<p style="color:var(--text-secondary)">Carregando provas...</p>';
   try {
-    const res = await fetch(`/api/provas?turma=${encodeURIComponent(serie)}`);
-    const provas = await res.json();
-    const todas = await fetch('/api/provas?turma=Todas').then(r => r.json()).catch(() => []);
-    const lista = [...provas, ...todas].sort((a,b) => new Date(a.data) - new Date(b.data));
+    let lista;
+    if (provasPreCarregadas !== undefined) {
+      lista = provasPreCarregadas;
+    } else {
+      const [provas, todas] = await Promise.all([
+        fetch(`/api/provas?turma=${encodeURIComponent(serie)}`).then(r => r.json()),
+        fetch('/api/provas?turma=Todas').then(r => r.json()).catch(() => [])
+      ]);
+      lista = [...provas, ...todas].sort((a,b) => new Date(a.data) - new Date(b.data));
+    }
     if (!lista.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma prova cadastrada.</p>'; return; }
     container.innerHTML = lista.map(p => {
       const dt = new Date(p.data + 'T12:00:00');
@@ -2604,12 +2629,13 @@ function deletarProva(id) {
 // ═══════════════════════════════════════════════════════
 // ─── CHAT DE DÚVIDAS ────────────────────────────────────
 // ═══════════════════════════════════════════════════════
-async function carregarDuvidasAluno(serie) {
+async function carregarDuvidasAluno(serie, duvidasPreCarregadas) {
   const container = document.getElementById('duvidasAluno');
   container.innerHTML = '<p style="color:var(--text-secondary)">Carregando dúvidas...</p>';
   try {
-    const res = await fetch(`/api/duvidas?turma=${encodeURIComponent(serie)}`);
-    const duvidas = await res.json();
+    const duvidas = duvidasPreCarregadas !== undefined
+      ? duvidasPreCarregadas
+      : await fetch(`/api/duvidas?turma=${encodeURIComponent(serie)}`).then(r => r.json());
     if (!duvidas.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma dúvida ainda. Seja o primeiro!</p>'; return; }
     container.innerHTML = duvidas.map(d => `
       <div class="duvida-card ${d.resposta ? 'respondida' : ''}">
@@ -2686,17 +2712,24 @@ function deletarDuvida(id) {
 // ═══════════════════════════════════════════════════════
 let tarefasConcluidas = [];
 
-async function carregarTarefasAluno(aluno) {
+async function carregarTarefasAluno(aluno, tarefasPreCarregadas, concluidasPreCarregadas) {
   const container = document.getElementById('tarefasAluno');
   container.innerHTML = '<p style="color:var(--text-secondary)">Carregando tarefas...</p>';
   try {
-    const [resTarefas, resConcluidas, resTodas] = await Promise.all([
-      fetch(`/api/tarefas?turma=${encodeURIComponent(aluno.serie)}`).then(r => r.json()),
-      fetch(`/api/tarefas/concluidas/${encodeURIComponent(aluno.email)}`).then(r => r.json()).catch(() => []),
-      fetch('/api/tarefas?turma=Todas').then(r => r.json()).catch(() => [])
-    ]);
-    tarefasConcluidas = resConcluidas;
-    const lista = [...resTarefas, ...resTodas].sort((a,b) => new Date(a.prazo) - new Date(b.prazo));
+    let lista, concluidas;
+    if (tarefasPreCarregadas !== undefined) {
+      lista = tarefasPreCarregadas;
+      concluidas = concluidasPreCarregadas || [];
+    } else {
+      const [resTarefas, resConcluidas, resTodas] = await Promise.all([
+        fetch(`/api/tarefas?turma=${encodeURIComponent(aluno.serie)}`).then(r => r.json()),
+        fetch(`/api/tarefas/concluidas/${encodeURIComponent(aluno.email)}`).then(r => r.json()).catch(() => []),
+        fetch('/api/tarefas?turma=Todas').then(r => r.json()).catch(() => [])
+      ]);
+      concluidas = resConcluidas;
+      lista = [...resTarefas, ...resTodas].sort((a,b) => new Date(a.prazo) - new Date(b.prazo));
+    }
+    tarefasConcluidas = concluidas;
     if (!lista.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma tarefa cadastrada.</p>'; return; }
     container.innerHTML = lista.map(t => {
       const dt = new Date(t.prazo + 'T12:00:00');
@@ -2794,20 +2827,29 @@ function adicionarOpcaoEnquete() {
   container.appendChild(input);
 }
 
-async function carregarEnquetesAluno(aluno) {
+async function carregarEnquetesAluno(aluno, enquetesPreCarregadas) {
   const container = document.getElementById('enquetesAluno');
   container.innerHTML = '<p style="color:var(--text-secondary)">Carregando enquetes...</p>';
   try {
-    const [res1, res2] = await Promise.all([
-      fetch(`/api/enquetes?turma=${encodeURIComponent(aluno.serie)}`).then(r => r.json()),
-      fetch('/api/enquetes?turma=Todas').then(r => r.json()).catch(() => [])
-    ]);
-    const enquetes = [...res1, ...res2];
+    let enquetes;
+    if (enquetesPreCarregadas !== undefined) {
+      enquetes = enquetesPreCarregadas;
+    } else {
+      const [res1, res2] = await Promise.all([
+        fetch(`/api/enquetes?turma=${encodeURIComponent(aluno.serie)}`).then(r => r.json()),
+        fetch('/api/enquetes?turma=Todas').then(r => r.json()).catch(() => [])
+      ]);
+      const lista = [...res1, ...res2];
+      enquetes = await Promise.all(lista.map(async e => {
+        const resultados = await fetch(`/api/enquetes/${e.id}/resultados`).then(r => r.json()).catch(() => ({ total: 0, contagem: {} }));
+        return { ...e, resultados };
+      }));
+    }
     if (!enquetes.length) { container.innerHTML = '<p class="feature-vazia">Nenhuma enquete ativa.</p>'; return; }
 
     let html = '';
     for (const e of enquetes) {
-      const resultados = await fetch(`/api/enquetes/${e.id}/resultados`).then(r => r.json());
+      const resultados = e.resultados || { total: 0, contagem: {} };
       const total = resultados.total || 0;
       html += `<div class="enquete-card" data-eid="${e.id}">
         <div class="enquete-pergunta">📊 ${sanitizeHTML(e.pergunta)}</div>
@@ -2909,14 +2951,15 @@ function deletarEnquete(id) {
 // ══════════════════════════════════════════════════════════════
 // ─── RANKING DE TAREFAS ───────────────────────────────────────
 // ══════════════════════════════════════════════════════════════
-async function carregarRankingTarefas(turma) {
+async function carregarRankingTarefas(turma, rankingPreCarregado) {
   const container = document.getElementById('rankingTurma');
   if (!container) return;
   container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Carregando...</p>';
 
   try {
-    const res = await fetch(`/api/ranking/${encodeURIComponent(turma)}`);
-    const ranking = await res.json();
+    const ranking = rankingPreCarregado !== undefined
+      ? rankingPreCarregado
+      : await fetch(`/api/ranking/${encodeURIComponent(turma)}`).then(r => r.json());
 
     if (!ranking.length) {
       container.innerHTML = '<p class="ranking-vazio">🏁 Nenhuma tarefa concluída ainda. Seja o primeiro!</p>';
@@ -2940,14 +2983,15 @@ async function carregarRankingTarefas(turma) {
 // ══════════════════════════════════════════════════════════════
 // ─── BOLETIM DO ALUNO (VISUALIZAÇÃO) ─────────────────────────
 // ══════════════════════════════════════════════════════════════
-async function carregarBoletinsAluno(aluno) {
+async function carregarBoletinsAluno(aluno, boletinsPreCarregados) {
   const container = document.getElementById('boletinsAluno');
   if (!container) return;
   container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Carregando...</p>';
 
   try {
-    const res = await fetch(`/api/boletins/aluno/${encodeURIComponent(aluno.email)}`);
-    const boletins = await res.json();
+    const boletins = boletinsPreCarregados !== undefined
+      ? boletinsPreCarregados
+      : await fetch(`/api/boletins/aluno/${encodeURIComponent(aluno.email)}`).then(r => r.json());
 
     if (!boletins.length) {
       container.innerHTML = '<p class="feature-vazia">Nenhum boletim ou observação enviado ainda.</p>';
