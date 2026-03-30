@@ -1132,9 +1132,9 @@ async function carregarSolicitacoesDirecao() {
 
       const info = document.createElement('div');
       info.className = 'solicitacao-info';
-      info.innerHTML = `<strong>${escapeHtml(s.nome)}</strong>
-        <p>✉️ ${escapeHtml(s.email)}</p>
-        ${s.mensagem ? `<p class="sol-msg">"${escapeHtml(s.mensagem)}"</p>` : ''}
+      info.innerHTML = `<strong>${sanitizeHTML(s.nome)}</strong>
+        <p>✉️ ${sanitizeHTML(s.email)}</p>
+        ${s.mensagem ? `<p class="sol-msg">"${sanitizeHTML(s.mensagem)}"</p>` : ''}
         <p style="font-size:0.75rem;color:var(--text-tertiary);">📅 ${new Date(s.created_at).toLocaleString('pt-BR')}</p>`;
 
       const btn = document.createElement('button');
