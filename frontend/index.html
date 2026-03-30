@@ -15,7 +15,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
         <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="stylesheet" href="style.css?v=2026t">
+        <link rel="stylesheet" href="style.css?v=2026u">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -302,6 +302,10 @@
                                 <span class="categoria-icone">🔔</span>
                                 <span class="categoria-texto">Solicitações <span id="badgeSolicitacoes" class="badge-sol hidden">0</span></span>
                         </button>
+                        <button class="btn-categoria" data-secao="contas-direcao">
+                                <span class="categoria-icone">🔑</span>
+                                <span class="categoria-texto">Contas Direção</span>
+                        </button>
                 </div>
 
                 <div id="secao-turmas" class="admin-secao active">
@@ -486,6 +490,14 @@
                 </div>
 
                 <!-- ── SEÇÃO SOLICITAÇÕES (ADMIN) ── -->
+                <div id="secao-contas-direcao" class="admin-secao hidden">
+                        <h3>🔑 Contas da Direção</h3>
+                        <p style="font-size:0.85rem; color:var(--text-tertiary); margin-bottom:14px;">Gerencie os logins da equipe de direção. Você pode alterar nome, e-mail ou senha de cada conta.</p>
+                        <div id="contasDirecaoContainer">
+                                <p style="color:var(--text-tertiary); text-align:center; padding:20px;">Carregando contas...</p>
+                        </div>
+                </div>
+
                 <div id="secao-solicitacoes" class="admin-secao hidden">
                         <h3>🔔 Solicitações de Acesso — Direção</h3>
                         <p style="font-size:0.85rem; color:var(--text-tertiary); margin-bottom:14px;">Pessoas que solicitaram uma conta de Direção. Crie a conta e o login será enviado por e-mail.</p>
@@ -817,6 +829,23 @@
                 </div>
         </div>
 
+        <!-- Modal Editar Conta Direção -->
+        <div id="modalEditarContaDirecao" class="modal-overlay hidden" style="display:none;">
+                <div class="modal-conteudo" style="max-width:380px;">
+                        <h2>✏️ Editar Conta Direção</h2>
+                        <p style="color:var(--text-tertiary); font-size:0.85rem; margin-bottom:18px; text-align:center;">Altere os dados desta conta. Deixe a senha em branco para não alterá-la.</p>
+                        <input type="hidden" id="editContaId">
+                        <input type="text" id="editContaNome" placeholder="Nome completo" style="margin-bottom:10px;">
+                        <input type="email" id="editContaEmail" placeholder="E-mail de login" style="margin-bottom:10px;">
+                        <input type="password" id="editContaSenha" placeholder="Nova senha (deixe em branco para manter)" style="margin-bottom:18px;">
+                        <div style="display:flex; gap:10px;">
+                                <button id="btnCancelarEditConta" style="flex:1; padding:11px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-secondary); font-size:0.9rem; font-weight:600; cursor:pointer;">Cancelar</button>
+                                <button id="btnSalvarEditConta" style="flex:1; padding:11px; border-radius:10px; border:none; background:linear-gradient(135deg,var(--primary-color),var(--primary-dark,#2b4acb)); color:#fff; font-size:0.9rem; font-weight:700; cursor:pointer;">Salvar</button>
+                        </div>
+                        <p id="msgEditConta" style="margin-top:10px; text-align:center; font-size:0.85rem;"></p>
+                </div>
+        </div>
+
         <!-- Modal de Confirmação Customizado -->
         <div id="modalConfirmar" class="modal-overlay hidden" style="display:none;">
                 <div class="modal-conteudo" style="max-width:320px; text-align:center; padding:28px 24px;">
@@ -833,6 +862,6 @@
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026t"></script>
+        <script src="script.js?v=2026u"></script>
 </body>
 </html>

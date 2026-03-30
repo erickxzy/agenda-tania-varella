@@ -1094,10 +1094,117 @@ function configurarNavegacaoAdmin(){
         case 'tarefas':   carregarTarefasAdmin(); break;
         case 'enquetes':  carregarEnquetesAdmin(); break;
         case 'solicitacoes': carregarSolicitacoesDirecao(); break;
+        case 'contas-direcao': carregarContasDirecao(); break;
       }
     }
   });
 }
+
+// ════════════════════════════════════════════════════════
+// ─── GERENCIAR CONTAS DIREÇÃO ────────────────────────────
+// ════════════════════════════════════════════════════════
+
+async function carregarContasDirecao() {
+  const container = document.getElementById('contasDirecaoContainer');
+  container.innerHTML = '<p style="color:var(--text-tertiary); text-align:center; padding:20px;">Carregando...</p>';
+  try {
+    const res = await adminFetch('/api/admin/direcao-contas');
+    const contas = await res.json();
+    if (!contas.length) {
+      container.innerHTML = '<p style="color:var(--text-tertiary); text-align:center; padding:20px;">Nenhuma conta cadastrada.</p>';
+      return;
+    }
+    container.innerHTML = contas.map(c => `
+      <div class="feature-card admin-item" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:600; color:var(--text-primary);">👤 ${sanitizeHTML(c.nome || '(sem nome)')}</div>
+          <div style="font-size:0.85rem; color:var(--text-tertiary);">${sanitizeHTML(c['E-mail'])}</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-editar-conta" data-id="${c.id}" data-nome="${sanitizeHTML(c.nome || '')}" data-email="${sanitizeHTML(c['E-mail'])}"
+            style="padding:6px 12px; border-radius:8px; border:1px solid var(--primary-color); background:transparent; color:var(--primary-color); font-size:0.85rem; cursor:pointer; font-weight:600;">
+            ✏️ Editar
+          </button>
+          <button class="btn-excluir-conta" data-id="${c.id}" data-nome="${sanitizeHTML(c.nome || c['E-mail'])}"
+            style="padding:6px 12px; border-radius:8px; border:none; background:#ef4444; color:#fff; font-size:0.85rem; cursor:pointer; font-weight:600;">
+            🗑
+          </button>
+        </div>
+      </div>`).join('');
+
+    container.querySelectorAll('.btn-editar-conta').forEach(btn => {
+      btn.addEventListener('click', () => abrirEditarConta(btn.dataset.id, btn.dataset.nome, btn.dataset.email));
+    });
+    container.querySelectorAll('.btn-excluir-conta').forEach(btn => {
+      btn.addEventListener('click', () => {
+        confirmarAcao(`Excluir a conta de ${btn.dataset.nome}?`, async () => {
+          const r = await adminFetch(`/api/admin/direcao-contas/${btn.dataset.id}`, { method: 'DELETE' });
+          const d = await r.json();
+          if (d.sucesso) { showToast('Conta excluída.', 'success'); carregarContasDirecao(); }
+          else showToast(d.erro || 'Erro ao excluir.', 'error');
+        }, { icone: '🗑', btnLabel: 'Excluir' });
+      });
+    });
+  } catch {
+    container.innerHTML = '<p style="color:red; text-align:center; padding:20px;">Erro ao carregar contas.</p>';
+  }
+}
+
+function abrirEditarConta(id, nome, email) {
+  document.getElementById('editContaId').value = id;
+  document.getElementById('editContaNome').value = nome;
+  document.getElementById('editContaEmail').value = email;
+  document.getElementById('editContaSenha').value = '';
+  document.getElementById('msgEditConta').textContent = '';
+  const modal = document.getElementById('modalEditarContaDirecao');
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+}
+
+document.getElementById('btnCancelarEditConta').addEventListener('click', () => {
+  const modal = document.getElementById('modalEditarContaDirecao');
+  modal.classList.add('hidden');
+  modal.style.display = 'none';
+});
+
+document.getElementById('btnSalvarEditConta').addEventListener('click', async () => {
+  const id = document.getElementById('editContaId').value;
+  const nome = document.getElementById('editContaNome').value.trim();
+  const email = document.getElementById('editContaEmail').value.trim();
+  const senha = document.getElementById('editContaSenha').value;
+  const msg = document.getElementById('msgEditConta');
+  const btn = document.getElementById('btnSalvarEditConta');
+
+  if (!email) { msg.textContent = 'E-mail é obrigatório.'; msg.style.color = 'red'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+  msg.textContent = '';
+
+  try {
+    const r = await adminFetch(`/api/admin/direcao-contas/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, email, senha: senha || undefined })
+    });
+    const d = await r.json();
+    if (d.sucesso) {
+      showToast('Conta atualizada com sucesso!', 'success');
+      document.getElementById('modalEditarContaDirecao').classList.add('hidden');
+      document.getElementById('modalEditarContaDirecao').style.display = 'none';
+      carregarContasDirecao();
+    } else {
+      msg.textContent = d.erro || 'Erro ao salvar.';
+      msg.style.color = 'red';
+    }
+  } catch {
+    msg.textContent = 'Erro de conexão.';
+    msg.style.color = 'red';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Salvar';
+  }
+});
 
 // ─── SOLICITAÇÕES DE ACESSO DIREÇÃO ───────────────────────────────────────────
 

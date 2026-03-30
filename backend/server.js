@@ -202,8 +202,7 @@ async function enviarEmailComTimeout(mailOptions, timeoutMs = 12000) {
 }
 
 async function enviarCodigoEmail(destinatario, codigo, nome) {
-        const transporter = criarTransporter();
-        await transporter.sendMail({
+        await enviarEmailComTimeout({
                 from: `"Agenda Escolar Tânia Varella Ferreira" <${process.env.EMAIL_REMETENTE}>`,
                 to: destinatario,
                 subject: '🎓 Código de Verificação - Cadastro',
@@ -223,8 +222,7 @@ async function enviarCodigoEmail(destinatario, codigo, nome) {
 }
 
 async function enviarCodigoLoginEmail(destinatario, codigo, nome) {
-        const transporter = criarTransporter();
-        await transporter.sendMail({
+        await enviarEmailComTimeout({
                 from: `"Agenda Escolar Tânia Varella Ferreira" <${process.env.EMAIL_REMETENTE}>`,
                 to: destinatario,
                 subject: '🔐 Código de Verificação de Login',
@@ -1563,6 +1561,63 @@ app.post('/api/direcao/criar-conta', requireAdminAuth, async (req, res) => {
                         console.warn('⚠️  E-mail de confirmação não enviado:', emailErr.message);
                 }
         }
+        res.json({ sucesso: true });
+});
+
+// ════════════════════════════════════════════════════════
+// ─── GERENCIAR CONTAS DIREÇÃO (admin) ────────────────────
+// ════════════════════════════════════════════════════════
+app.get('/api/admin/direcao-contas', requireAdminAuth, async (req, res) => {
+        const { data, error } = await supabase
+                .from('Login_Direção')
+                .select('id, "E-mail", nome')
+                .order('id', { ascending: true });
+        if (error) {
+                const { data: fallback, error: err2 } = await supabase
+                        .from('Login_Direção')
+                        .select('id, "E-mail"')
+                        .order('id', { ascending: true });
+                if (err2) return res.status(500).json({ erro: err2.message });
+                return res.json((fallback || []).map(r => ({ ...r, nome: null })));
+        }
+        res.json(data || []);
+});
+
+app.put('/api/admin/direcao-contas/:id', requireAdminAuth, async (req, res) => {
+        const { nome, email, senha } = req.body;
+        const { id } = req.params;
+
+        if (!email) return res.status(400).json({ erro: 'E-mail é obrigatório.' });
+        if (!email.includes('@')) return res.status(400).json({ erro: 'E-mail inválido.' });
+
+        const { data: outra } = await supabase
+                .from('Login_Direção')
+                .select('id')
+                .eq('E-mail', email)
+                .neq('id', id)
+                .single();
+        if (outra) return res.status(400).json({ erro: 'Este e-mail já pertence a outra conta.' });
+
+        const updates = { 'E-mail': email, nome: nome || null };
+        if (senha) {
+                if (senha.length < 6) return res.status(400).json({ erro: 'A senha deve ter pelo menos 6 caracteres.' });
+                updates['Senha'] = await bcrypt.hash(senha, 10);
+        }
+
+        let { error } = await supabase.from('Login_Direção').update(updates).eq('id', id);
+        if (error && error.message.includes('nome')) {
+                delete updates.nome;
+                const { error: err2 } = await supabase.from('Login_Direção').update(updates).eq('id', id);
+                if (err2) return res.status(500).json({ erro: err2.message });
+        } else if (error) {
+                return res.status(500).json({ erro: error.message });
+        }
+        res.json({ sucesso: true });
+});
+
+app.delete('/api/admin/direcao-contas/:id', requireAdminAuth, async (req, res) => {
+        const { error } = await supabase.from('Login_Direção').delete().eq('id', req.params.id);
+        if (error) return res.status(500).json({ erro: error.message });
         res.json({ sucesso: true });
 });
 
