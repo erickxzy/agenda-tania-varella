@@ -15,7 +15,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
         <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="stylesheet" href="style.css?v=2026q">
+        <link rel="stylesheet" href="style.css?v=2026r">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -29,7 +29,7 @@
                 <h1 class="titulo" id="tituloApp">Agenda Escolar Tânia Varella Ferreira</h1>
         </div>
 
-        <div id="selecaoBox" class="card selecao-card">
+        <div id="selecaoBox" class="card selecao-card hidden">
                 <h2>Bem-vindo à Nossa Agenda Escolar</h2>
                 <p style="color: var(--text-tertiary); margin-bottom: 25px; text-align: center; line-height: 1.6;">
                         📚 Gerencie eventos, cardápios, avisos e muito mais<br>
@@ -397,7 +397,24 @@
                         <h3>✅ Controle de Tarefas</h3>
                         <div class="nova-feature-form">
                                 <input type="text" id="tarefaTitulo" placeholder="Título da tarefa">
-                                <input type="text" id="tarefaMateria" placeholder="Matéria">
+                                <select id="tarefaMateria">
+                                        <option value="">Selecione a matéria</option>
+                                        <option value="Matemática">Matemática</option>
+                                        <option value="Português">Português</option>
+                                        <option value="História">História</option>
+                                        <option value="Geografia">Geografia</option>
+                                        <option value="Ciências">Ciências</option>
+                                        <option value="Física">Física</option>
+                                        <option value="Química">Química</option>
+                                        <option value="Biologia">Biologia</option>
+                                        <option value="Inglês">Inglês</option>
+                                        <option value="Educação Física">Educação Física</option>
+                                        <option value="Arte">Arte</option>
+                                        <option value="Filosofia">Filosofia</option>
+                                        <option value="Sociologia">Sociologia</option>
+                                        <option value="Redação">Redação</option>
+                                        <option value="Informática">Informática</option>
+                                </select>
                                 <textarea id="tarefaDescricao" placeholder="Descrição (opcional)" rows="2" style="resize:vertical;"></textarea>
                                 <select id="tarefaTurma">
                                         <option value="">Selecione a turma</option>
@@ -472,6 +489,15 @@
                 <div id="secao-solicitacoes" class="admin-secao hidden">
                         <h3>🔔 Solicitações de Acesso — Direção</h3>
                         <p style="font-size:0.85rem; color:var(--text-tertiary); margin-bottom:14px;">Pessoas que solicitaram uma conta de Direção. Crie a conta e o login será enviado por e-mail.</p>
+
+                        <button id="btnToggleNovaContaDirecao" class="btn-adicionar" style="margin-bottom:16px;">+ Criar Conta Diretamente</button>
+                        <div id="formNovaContaDirecaoWrap" class="nova-feature-form hidden" style="margin-bottom:20px;">
+                                <input type="text" id="nomeNovaContaDirecao" placeholder="Nome completo">
+                                <input type="email" id="emailNovaContaDirecao" placeholder="E-mail">
+                                <input type="password" id="senhaNovaContaDirecao" placeholder="Senha (mín. 6 caracteres)" minlength="6">
+                                <button id="btnConfirmarNovaContaDirecao" class="btn-adicionar">✅ Criar Conta e Enviar Login por E-mail</button>
+                        </div>
+
                         <div id="solicitacoesContainer">
                                 <p style="color:var(--text-tertiary); text-align:center; padding:20px;">Nenhuma solicitação pendente.</p>
                         </div>
@@ -807,6 +833,6 @@
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026q"></script>
+        <script src="script.js?v=2026r"></script>
 </body>
 </html>

@@ -612,6 +612,9 @@ loginForm.addEventListener("submit", async e => {
           if(data.token) sessionStorage.setItem('adminToken', data.token);
           tipoAdmin = 'admin';
           window._adminEmail = 'admin@sistema.local';
+          sessionStorage.setItem('tipoAdmin', 'admin');
+          sessionStorage.setItem('usuarioAtualStr', JSON.stringify(data.usuario));
+          sessionStorage.setItem('adminEmail', 'admin@sistema.local');
           mostrarPainelAdmin();
         } else {
           showToast(data.erro || 'Erro ao fazer login', 'error');
@@ -762,6 +765,9 @@ formVerificacaoCadastro.addEventListener('submit', async e => {
           if (data.token) sessionStorage.setItem('adminToken', data.token);
           tipoAdmin = 'direcao';
           window._adminEmail = data.usuario?.email || '';
+          sessionStorage.setItem('tipoAdmin', 'direcao');
+          sessionStorage.setItem('usuarioAtualStr', JSON.stringify(data.usuario));
+          sessionStorage.setItem('adminEmail', data.usuario?.email || '');
           mostrarPainelAdmin();
           showToast('Bem-vindo(a), ' + data.usuario.nome + '!', 'success', 'Login Realizado');
         } else {
@@ -875,6 +881,9 @@ async function logarAluno(email,senha){
       if(data.token) sessionStorage.setItem('adminToken', data.token);
       tipoAdmin = data.tipoAdmin || 'admin';
       window._adminEmail = data.usuario?.email || 'admin@sistema.local';
+      sessionStorage.setItem('tipoAdmin', tipoAdmin);
+      sessionStorage.setItem('usuarioAtualStr', JSON.stringify(data.usuario));
+      sessionStorage.setItem('adminEmail', window._adminEmail);
       mostrarPainelAdmin();
       showToast('Bem-vindo, ' + data.usuario.nome + '!', 'success', 'Login Realizado');
     } else {
@@ -950,7 +959,7 @@ async function mostrarPainelAluno(aluno){
 
   document.getElementById("boasVindas").textContent=`Bem-vindo(a), ${aluno.nome}!`;
   const turmaElement = document.getElementById("turma");
-  turmaElement.innerHTML = `<img src="logo-escola.png" alt="" class="logo-serie"> Série: ${aluno.serie}`;
+  turmaElement.innerHTML = `📚 Série: ${aluno.serie}`;
 
   const lista=document.getElementById("listaEventos");
   lista.innerHTML="<p>Carregando eventos...</p>";
@@ -1039,62 +1048,46 @@ function mostrarPainelAdmin(){
   if (tipoAdmin === 'admin') verificarSolicitacoesPendentes();
 }
 
+let _navAdminConfigurada = false;
 function configurarNavegacaoAdmin(){
-  const botoesCategoria = document.querySelectorAll('.btn-categoria');
-  
-  botoesCategoria.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const secaoNome = btn.getAttribute('data-secao');
-      
-      botoesCategoria.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      
-      document.querySelectorAll('.admin-secao').forEach(secao => {
-        secao.classList.remove('active');
-        secao.classList.add('hidden');
-      });
-      
-      const secaoAtiva = document.getElementById(`secao-${secaoNome}`);
-      if(secaoAtiva){
-        secaoAtiva.classList.remove('hidden');
-        secaoAtiva.classList.add('active');
-        
-        switch(secaoNome){
-          case 'turmas':
-            atualizarListaAlunos();
-            break;
-          case 'avisos':
-            mostrarAvisosAdmin();
-            break;
-          case 'cardapio':
-            mostrarCardapioAdmin();
-            break;
-          case 'logs':
-            carregarLogs();
-            break;
-          case 'eventos':
-            atualizarEventosAdmin();
-            break;
-          case 'professores':
-            break;
-          case 'provas':
-            carregarProvasAdmin();
-            break;
-          case 'duvidas':
-            carregarDuvidasAdmin();
-            break;
-          case 'tarefas':
-            carregarTarefasAdmin();
-            break;
-          case 'enquetes':
-            carregarEnquetesAdmin();
-            break;
-          case 'solicitacoes':
-            carregarSolicitacoesDirecao();
-            break;
-        }
-      }
+  if (_navAdminConfigurada) return;
+  _navAdminConfigurada = true;
+
+  const menuContainer = document.querySelector('.admin-menu-categorias');
+  if (!menuContainer) return;
+
+  menuContainer.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-categoria');
+    if (!btn) return;
+
+    const secaoNome = btn.getAttribute('data-secao');
+
+    document.querySelectorAll('.btn-categoria').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.querySelectorAll('.admin-secao').forEach(secao => {
+      secao.classList.remove('active');
+      secao.classList.add('hidden');
     });
+
+    const secaoAtiva = document.getElementById(`secao-${secaoNome}`);
+    if(secaoAtiva){
+      secaoAtiva.classList.remove('hidden');
+      secaoAtiva.classList.add('active');
+
+      switch(secaoNome){
+        case 'turmas':    atualizarListaAlunos(); break;
+        case 'avisos':    mostrarAvisosAdmin(); break;
+        case 'cardapio':  mostrarCardapioAdmin(); break;
+        case 'logs':      carregarLogs(); break;
+        case 'eventos':   atualizarEventosAdmin(); break;
+        case 'provas':    carregarProvasAdmin(); break;
+        case 'duvidas':   carregarDuvidasAdmin(); break;
+        case 'tarefas':   carregarTarefasAdmin(); break;
+        case 'enquetes':  carregarEnquetesAdmin(); break;
+        case 'solicitacoes': carregarSolicitacoesDirecao(); break;
+      }
+    }
   });
 }
 
@@ -2219,6 +2212,7 @@ document.getElementById("sairAluno").addEventListener("click",()=>{
   loginForm.reset();
   usuarioAtual = null;
   tipoUsuario = null;
+  sessionStorage.removeItem('alunoLogado');
 });
 
 document.getElementById("sairAdmin").addEventListener("click",()=>{
@@ -2227,7 +2221,7 @@ document.getElementById("sairAdmin").addEventListener("click",()=>{
   loginForm.reset();
   usuarioAtual = null;
   tipoUsuario = null;
-  sessionStorage.removeItem('adminToken');
+  ['adminToken','tipoAdmin','usuarioAtualStr','adminEmail'].forEach(k => sessionStorage.removeItem(k));
 });
 
 const sininho = document.getElementById("sininho");
@@ -3110,8 +3104,94 @@ if (btnEnviarBoletim) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ─── PWA — SERVICE WORKER & INSTALL BANNER ───────────────────
+// ─── CRIAR CONTA DIREÇÃO DIRETAMENTE (admin) ─────────────────
 // ══════════════════════════════════════════════════════════════
+(function configurarCriarContaDireta() {
+  const btnToggle = document.getElementById('btnToggleNovaContaDirecao');
+  const formWrap  = document.getElementById('formNovaContaDirecaoWrap');
+  const btnConfirm = document.getElementById('btnConfirmarNovaContaDirecao');
+  if (!btnToggle || !formWrap || !btnConfirm) return;
+
+  btnToggle.addEventListener('click', () => {
+    formWrap.classList.toggle('hidden');
+    btnToggle.textContent = formWrap.classList.contains('hidden')
+      ? '+ Criar Conta Diretamente'
+      : '— Fechar Formulário';
+  });
+
+  btnConfirm.addEventListener('click', async () => {
+    const nome  = document.getElementById('nomeNovaContaDirecao').value.trim();
+    const email = document.getElementById('emailNovaContaDirecao').value.trim();
+    const senha = document.getElementById('senhaNovaContaDirecao').value;
+    if (!nome || !email || !senha) { showToast('Preencha todos os campos.', 'warning'); return; }
+    if (senha.length < 6) { showToast('Senha deve ter pelo menos 6 caracteres.', 'warning'); return; }
+
+    btnConfirm.disabled = true;
+    btnConfirm.textContent = 'Criando...';
+    try {
+      const res = await adminFetch('/api/direcao/criar-conta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email, senha })
+      });
+      const data = await res.json();
+      if (data.sucesso) {
+        showToast('Conta criada! Login enviado por e-mail.', 'success');
+        document.getElementById('nomeNovaContaDirecao').value = '';
+        document.getElementById('emailNovaContaDirecao').value = '';
+        document.getElementById('senhaNovaContaDirecao').value = '';
+        formWrap.classList.add('hidden');
+        btnToggle.textContent = '+ Criar Conta Diretamente';
+      } else {
+        showToast(data.erro || 'Erro ao criar conta.', 'error');
+      }
+    } catch {
+      showToast('Erro de conexão.', 'error');
+    }
+    btnConfirm.disabled = false;
+    btnConfirm.textContent = '✅ Criar Conta e Enviar Login por E-mail';
+  });
+})();
+
+// ══════════════════════════════════════════════════════════════
+// ─── RESTAURAR SESSÃO AO RECARREGAR PÁGINA ───────────────────
+// ══════════════════════════════════════════════════════════════
+async function restaurarSessao() {
+  const alunoStr   = sessionStorage.getItem('alunoLogado');
+  const adminToken = sessionStorage.getItem('adminToken');
+
+  if (alunoStr) {
+    try {
+      const aluno = JSON.parse(alunoStr);
+      if (aluno && aluno.email) {
+        await mostrarPainelAluno(aluno);
+        return;
+      }
+    } catch {}
+    sessionStorage.removeItem('alunoLogado');
+  }
+
+  if (adminToken) {
+    try {
+      const tipoSalvo    = sessionStorage.getItem('tipoAdmin') || 'admin';
+      const usuarioStr   = sessionStorage.getItem('usuarioAtualStr');
+      usuarioAtual       = usuarioStr ? JSON.parse(usuarioStr) : { nome: tipoSalvo === 'admin' ? 'Administrador' : 'Direção' };
+      tipoAdmin          = tipoSalvo;
+      window._adminEmail = sessionStorage.getItem('adminEmail') || '';
+      mostrarPainelAdmin();
+      return;
+    } catch {
+      ['adminToken','tipoAdmin','usuarioAtualStr','adminEmail'].forEach(k => sessionStorage.removeItem(k));
+    }
+  }
+
+  selecaoBox.classList.remove('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  restaurarSessao();
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});

@@ -1148,7 +1148,7 @@ app.delete('/api/provas/:id', requireAdminAuth, async (req, res) => {
 // ════════════════════════════════════════════════════════
 app.get('/api/duvidas', async (req, res) => {
         const { turma } = req.query;
-        let query = supabase.from('duvidas').select('*').order('created_at', { ascending: false });
+        let query = supabase.from('duvidas').select('*').order('created_at', { ascending: true });
         if (turma) query = query.eq('turma', turma);
         const { data, error } = await query;
         if (error) return res.status(500).json({ erro: error.message });

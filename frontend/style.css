@@ -3331,3 +3331,47 @@ body.dark-mode .logo-serie {
   width: 100%;
 }
 .btn-sol-del:hover { opacity: 0.88; }
+
+/* ── Botões responsivos no celular ── */
+@media (max-width: 600px) {
+  .admin-menu-categorias {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .btn-categoria {
+    padding: 12px 6px;
+    min-height: 72px;
+  }
+
+  .categoria-icone {
+    font-size: 1.5rem;
+  }
+
+  .categoria-texto {
+    font-size: 0.78rem;
+  }
+
+  .btn-adicionar,
+  .btn-excluir,
+  .btn-editar,
+  .btn-criar-conta,
+  .btn-sol-msg,
+  .btn-sol-edit,
+  .btn-sol-del {
+    min-height: 38px;
+    font-size: 0.82rem;
+    padding: 8px 10px;
+  }
+
+  .solicitacao-acoes {
+    flex-wrap: wrap;
+  }
+
+  .aluno-card-acoes button,
+  .btn-excluir-feature {
+    min-height: 34px;
+    font-size: 0.8rem;
+  }
+}
