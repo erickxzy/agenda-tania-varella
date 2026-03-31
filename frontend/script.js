@@ -2210,38 +2210,55 @@ async function mostrarAvisosAdmin(){
   }
 }
 
-async function popularSelectProfessores(selectId, valorAtual = '') {
-  const sel = document.getElementById(selectId);
-  sel.innerHTML = '<option value="">Carregando...</option>';
+async function popularSelectProfessores(gridId, inputId, labelId, valorAtual = '') {
+  const grid = document.getElementById(gridId);
+  const input = document.getElementById(inputId);
+  const label = document.getElementById(labelId);
+  grid.innerHTML = '<span class="prof-grid-loading">Carregando...</span>';
+  input.value = '';
+  if (label) label.textContent = '';
+
   try {
     const res = await fetch('/api/professores');
     const profs = await res.json();
-    sel.innerHTML = '<option value="">Selecione o professor</option>';
-    profs.forEach(p => {
-      const nome = p.nome.trim();
-      const opt = document.createElement('option');
-      opt.value = nome;
-      opt.textContent = nome + (p.materia ? ` — ${p.materia}` : '');
-      if (nome === valorAtual) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    // Se valor atual não está na lista, adiciona como opção
+    grid.innerHTML = '';
+
+    // Se há um valor atual que não está na lista, adiciona manualmente
+    const todos = [...profs];
     if (valorAtual && !profs.find(p => p.nome.trim() === valorAtual)) {
-      const opt = document.createElement('option');
-      opt.value = valorAtual;
-      opt.textContent = valorAtual;
-      opt.selected = true;
-      sel.insertBefore(opt, sel.children[1]);
+      todos.unshift({ id: 'custom', nome: valorAtual, materia: null });
+    }
+
+    todos.forEach(p => {
+      const nome = p.nome.trim();
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'prof-chip' + (nome === valorAtual ? ' prof-chip-selecionado' : '');
+      btn.innerHTML = `<strong>${nome}</strong>${p.materia ? `<span>${p.materia}</span>` : ''}`;
+      btn.addEventListener('click', () => {
+        grid.querySelectorAll('.prof-chip').forEach(b => b.classList.remove('prof-chip-selecionado'));
+        btn.classList.add('prof-chip-selecionado');
+        input.value = nome;
+        if (label) label.textContent = nome;
+      });
+      grid.appendChild(btn);
+    });
+
+    if (valorAtual) {
+      input.value = valorAtual;
+      if (label) label.textContent = valorAtual;
     }
   } catch {
-    sel.innerHTML = '<option value="">Erro ao carregar</option>';
+    grid.innerHTML = '<span class="prof-grid-loading">Erro ao carregar professores.</span>';
   }
 }
 
 document.getElementById("btnNovoAviso").addEventListener("click", ()=>{
   const modal = document.getElementById("modalNovoAviso");
   document.getElementById("formNovoAviso").reset();
-  popularSelectProfessores('novoProfessor');
+  document.getElementById("novoProfessor").value = '';
+  document.getElementById("novoProfessorNomeSelecionado").textContent = '';
+  popularSelectProfessores('novoProfessorGrid', 'novoProfessor', 'novoProfessorNomeSelecionado');
   modal.classList.remove("hidden");
   modal.style.display = "flex";
 });
@@ -2260,7 +2277,12 @@ document.getElementById("formNovoAviso").addEventListener("submit", async (e)=>{
   const titulo = document.getElementById("novoTitulo").value.trim();
   const descricao = document.getElementById("novoDescricao").value.trim();
   const data_aviso = document.getElementById("novoData").value.trim();
-  
+
+  if(!professor){
+    showToast("Selecione um professor!", "error");
+    return;
+  }
+
   if(titulo.length < 5){
     showToast("O título deve ter no mínimo 5 caracteres!", "error");
     return;
@@ -2305,7 +2327,7 @@ function editarAviso(e){
   document.getElementById("editDescricao").value = btn.dataset.descricao;
   document.getElementById("editData").value = btn.dataset.data;
   
-  popularSelectProfessores('editProfessor', btn.dataset.professor);
+  popularSelectProfessores('editProfessorGrid', 'editProfessor', 'editProfessorNomeSelecionado', btn.dataset.professor);
 
   document.getElementById("modalEditarAviso").style.display = "flex";
   document.getElementById("modalEditarAviso").classList.remove("hidden");

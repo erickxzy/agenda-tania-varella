@@ -15,7 +15,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
         <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="stylesheet" href="style.css?v=2026x">
+        <link rel="stylesheet" href="style.css?v=2026y">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -648,10 +648,11 @@
                                         <option value="Urgente">Urgente</option>
                                 </select>
 
-                                <label>Professor:</label>
-                                <select id="novoProfessor" required>
-                                        <option value="">Carregando professores...</option>
-                                </select>
+                                <label>Professor: <span id="novoProfessorNomeSelecionado" style="color:var(--primary-color);font-weight:700;margin-left:6px;"></span></label>
+                                <input type="hidden" id="novoProfessor">
+                                <div id="novoProfessorGrid" class="prof-grid">
+                                        <span class="prof-grid-loading">Carregando...</span>
+                                </div>
 
                                 <label>Título:</label>
                                 <input type="text" id="novoTitulo" placeholder="Título do aviso (mínimo 5 caracteres)" required minlength="5">
@@ -685,10 +686,11 @@
                                         <option value="Urgente">Urgente</option>
                                 </select>
 
-                                <label>Professor:</label>
-                                <select id="editProfessor" required>
-                                        <option value="">Selecione o professor</option>
-                                </select>
+                                <label>Professor: <span id="editProfessorNomeSelecionado" style="color:var(--primary-color);font-weight:700;margin-left:6px;"></span></label>
+                                <input type="hidden" id="editProfessor">
+                                <div id="editProfessorGrid" class="prof-grid">
+                                        <span class="prof-grid-loading">Carregando...</span>
+                                </div>
 
                                 <label>Título:</label>
                                 <input type="text" id="editTitulo" placeholder="Título do aviso (mínimo 5 caracteres)" required minlength="5">
@@ -866,6 +868,6 @@
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026x"></script>
+        <script src="script.js?v=2026y"></script>
 </body>
 </html>
