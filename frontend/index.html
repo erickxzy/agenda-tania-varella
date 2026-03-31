@@ -15,7 +15,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
         <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="stylesheet" href="style.css?v=2026z">
+        <link rel="stylesheet" href="style.css?v=2026aa">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -360,7 +360,9 @@
                         <h3>📝 Calendário de Provas</h3>
                         <div class="nova-feature-form">
                                 <input type="text" id="provaTitulo" placeholder="Título (ex: Prova de Matemática)">
-                                <input type="text" id="provaMateria" placeholder="Matéria">
+                                <select id="provaMateria">
+                                        <option value="">Selecione a matéria</option>
+                                </select>
                                 <input type="text" id="provaDescricao" placeholder="Descrição (opcional)">
                                 <input type="date" id="provaData">
                                 <select id="provaTurma">
@@ -866,6 +868,6 @@
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026z"></script>
+        <script src="script.js?v=2026aa"></script>
 </body>
 </html>

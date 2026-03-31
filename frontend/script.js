@@ -2720,8 +2720,37 @@ async function carregarProvasAluno(serie, provasPreCarregadas) {
   } catch { container.innerHTML = '<p class="feature-vazia">Erro ao carregar provas.</p>'; }
 }
 
+async function popularMateriaSelect(selectId, valorAtual = '') {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  try {
+    const res = await fetch('/api/professores');
+    const profs = await res.json();
+    const materias = new Set();
+    profs.forEach(p => {
+      if (p.materia) {
+        p.materia.split(/[,\/]/).forEach(m => {
+          const mt = m.trim();
+          if (mt) materias.add(mt);
+        });
+      }
+    });
+    sel.innerHTML = '<option value="">Selecione a matéria</option>';
+    [...materias].sort().forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      if (m === valorAtual) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  } catch {
+    sel.innerHTML = '<option value="">Erro ao carregar matérias</option>';
+  }
+}
+
 async function carregarProvasAdmin() {
   const container = document.getElementById('listaProvasAdmin');
+  popularMateriaSelect('provaMateria');
   container.innerHTML = '<p>Carregando...</p>';
   try {
     const res = await fetch('/api/provas');
