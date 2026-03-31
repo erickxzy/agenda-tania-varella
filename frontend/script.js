@@ -1957,25 +1957,22 @@ async function atualizarEventosAdmin(){
   });
 
   document.querySelectorAll(".excluir").forEach(btn=>{
-    btn.addEventListener("click", async e=>{
+    btn.addEventListener("click", e=>{
       const id = e.currentTarget.dataset.id;
-      
-      const confirmado = await confirmarAcao(
-        '🗑️ Excluir Evento',
-        'Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.'
-      );
-      
-      if(!confirmado) return;
 
-      try {
-        const res = await adminFetch(`/api/eventos/${id}`, {method: 'DELETE'});
-        if(res.ok){
-          showToast("Evento excluído com sucesso!", "success");
-          atualizarEventosAdmin();
+      confirmarAcao('Excluir este evento?', async () => {
+        try {
+          const res = await adminFetch(`/api/eventos/${id}`, { method: 'DELETE' });
+          if(res.ok){
+            showToast("Evento excluído com sucesso!", "success");
+            atualizarEventosAdmin();
+          } else {
+            showToast("Erro ao excluir evento!", "error");
+          }
+        } catch(error) {
+          showToast("Erro ao excluir evento!", "error");
         }
-      } catch(error) {
-        showToast("Erro ao excluir evento!", "error");
-      }
+      });
     });
   });
 }
@@ -2361,26 +2358,23 @@ document.getElementById("formEditarAviso").addEventListener("submit", async (e)=
   }
 });
 
-async function excluirAviso(e){
+function excluirAviso(e){
   const btn = e.currentTarget;
   const id = btn.dataset.id;
 
-  const confirmado = await confirmarAcao(
-    '🗑️ Excluir Aviso',
-    'Tem certeza que deseja excluir este aviso? Esta ação não pode ser desfeita.'
-  );
-  
-  if(!confirmado) return;
-
-  try {
-    const res = await adminFetch(`/api/avisos/${id}`, {method: 'DELETE'});
-    if(res.ok){
-      showToast("Aviso excluído com sucesso!", "success");
-      mostrarAvisosAdmin();
+  confirmarAcao('Excluir este aviso?', async () => {
+    try {
+      const res = await adminFetch(`/api/avisos/${id}`, { method: 'DELETE' });
+      if(res.ok){
+        showToast("Aviso excluído com sucesso!", "success");
+        mostrarAvisosAdmin();
+      } else {
+        showToast("Erro ao excluir aviso!", "error");
+      }
+    } catch(error) {
+      showToast("Erro ao excluir aviso!", "error");
     }
-  } catch(error) {
-    showToast("Erro ao excluir aviso!", "error");
-  }
+  });
 }
 
 document.getElementById("sairAluno").addEventListener("click",()=>{
