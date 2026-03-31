@@ -1899,10 +1899,10 @@ async function atualizarEventosAdmin(){
       eventos.forEach(evento=>{
         const li=document.createElement("li");
         li.innerHTML=`
-          <span>${evento.descricao}</span>
+          <span>${sanitizeHTML(evento.descricao)}</span>
           <div>
             <button class="editar" data-id="${evento.id}" data-descricao="${evento.descricao}" data-turma="${turma.codigo}">✏️</button>
-            <button class="excluir" data-id="${evento.id}">🗑️</button>
+            <button class="excluir" onclick="excluirEvento(${evento.id})">🗑️</button>
           </div>
         `;
         lista.appendChild(li);
@@ -1956,24 +1956,21 @@ async function atualizarEventosAdmin(){
     });
   });
 
-  document.querySelectorAll(".excluir").forEach(btn=>{
-    btn.addEventListener("click", e=>{
-      const id = e.currentTarget.dataset.id;
+}
 
-      confirmarAcao('Excluir este evento?', async () => {
-        try {
-          const res = await adminFetch(`/api/eventos/${id}`, { method: 'DELETE' });
-          if(res.ok){
-            showToast("Evento excluído com sucesso!", "success");
-            atualizarEventosAdmin();
-          } else {
-            showToast("Erro ao excluir evento!", "error");
-          }
-        } catch(error) {
-          showToast("Erro ao excluir evento!", "error");
-        }
-      });
-    });
+function excluirEvento(id) {
+  confirmarAcao('Excluir este evento?', async () => {
+    try {
+      const res = await adminFetch(`/api/eventos/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast("Evento excluído com sucesso!", "success");
+        atualizarEventosAdmin();
+      } else {
+        showToast("Erro ao excluir evento!", "error");
+      }
+    } catch (error) {
+      showToast("Erro ao excluir evento!", "error");
+    }
   });
 }
 
