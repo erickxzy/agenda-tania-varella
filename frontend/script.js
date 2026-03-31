@@ -2750,7 +2750,6 @@ async function popularMateriaSelect(selectId, valorAtual = '') {
 
 async function carregarProvasAdmin() {
   const container = document.getElementById('listaProvasAdmin');
-  popularMateriaSelect('provaMateria');
   container.innerHTML = '<p>Carregando...</p>';
   try {
     const res = await fetch('/api/provas');
