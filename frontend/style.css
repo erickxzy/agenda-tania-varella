@@ -362,6 +362,7 @@ button:active {
 }
 
 .admin-secao {
+  scroll-margin-top: 80px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
   border-radius: 20px;
   padding: 30px;
@@ -417,6 +418,7 @@ button:active {
 }
 
 .secao-painel {
+  scroll-margin-top: 80px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
   border-radius: 20px;
   padding: 30px;
