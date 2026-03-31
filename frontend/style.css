@@ -3427,20 +3427,22 @@ body.dark-mode .logo-serie {
 /* ── Botões responsivos no celular ── */
 @media (max-width: 600px) {
   .admin-menu-categorias {
-    gap: 5px;
-    padding: 8px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
   }
 
   .btn-categoria {
-    padding: 4px 9px;
+    padding: 12px 6px;
+    min-height: 72px;
   }
 
   .categoria-icone {
-    font-size: 0.9rem;
+    font-size: 1.5rem;
   }
 
   .categoria-texto {
-    font-size: 0.74rem;
+    font-size: 0.78rem;
   }
 
   .btn-adicionar,
