@@ -2210,9 +2210,38 @@ async function mostrarAvisosAdmin(){
   }
 }
 
+async function popularSelectProfessores(selectId, valorAtual = '') {
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="">Carregando...</option>';
+  try {
+    const res = await fetch('/api/professores');
+    const profs = await res.json();
+    sel.innerHTML = '<option value="">Selecione o professor</option>';
+    profs.forEach(p => {
+      const nome = p.nome.trim();
+      const opt = document.createElement('option');
+      opt.value = nome;
+      opt.textContent = nome + (p.materia ? ` — ${p.materia}` : '');
+      if (nome === valorAtual) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    // Se valor atual não está na lista, adiciona como opção
+    if (valorAtual && !profs.find(p => p.nome.trim() === valorAtual)) {
+      const opt = document.createElement('option');
+      opt.value = valorAtual;
+      opt.textContent = valorAtual;
+      opt.selected = true;
+      sel.insertBefore(opt, sel.children[1]);
+    }
+  } catch {
+    sel.innerHTML = '<option value="">Erro ao carregar</option>';
+  }
+}
+
 document.getElementById("btnNovoAviso").addEventListener("click", ()=>{
   const modal = document.getElementById("modalNovoAviso");
   document.getElementById("formNovoAviso").reset();
+  popularSelectProfessores('novoProfessor');
   modal.classList.remove("hidden");
   modal.style.display = "flex";
 });
@@ -2272,11 +2301,12 @@ function editarAviso(e){
   avisoEditandoId = btn.dataset.id;
   
   document.getElementById("editTipoAviso").value = btn.dataset.tipo;
-  document.getElementById("editProfessor").value = btn.dataset.professor;
   document.getElementById("editTitulo").value = btn.dataset.titulo;
   document.getElementById("editDescricao").value = btn.dataset.descricao;
   document.getElementById("editData").value = btn.dataset.data;
   
+  popularSelectProfessores('editProfessor', btn.dataset.professor);
+
   document.getElementById("modalEditarAviso").style.display = "flex";
   document.getElementById("modalEditarAviso").classList.remove("hidden");
 }

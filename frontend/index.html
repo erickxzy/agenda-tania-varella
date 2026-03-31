@@ -15,7 +15,7 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Agenda Escolar">
         <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="stylesheet" href="style.css?v=2026w">
+        <link rel="stylesheet" href="style.css?v=2026x">
 </head>
 <body>
         <div id="toast-container" class="toast-container"></div>
@@ -649,7 +649,9 @@
                                 </select>
 
                                 <label>Professor:</label>
-                                <input type="text" id="novoProfessor" placeholder="Nome do professor" required minlength="3">
+                                <select id="novoProfessor" required>
+                                        <option value="">Carregando professores...</option>
+                                </select>
 
                                 <label>Título:</label>
                                 <input type="text" id="novoTitulo" placeholder="Título do aviso (mínimo 5 caracteres)" required minlength="5">
@@ -684,7 +686,9 @@
                                 </select>
 
                                 <label>Professor:</label>
-                                <input type="text" id="editProfessor" placeholder="Nome do professor" required minlength="3">
+                                <select id="editProfessor" required>
+                                        <option value="">Selecione o professor</option>
+                                </select>
 
                                 <label>Título:</label>
                                 <input type="text" id="editTitulo" placeholder="Título do aviso (mínimo 5 caracteres)" required minlength="5">
@@ -862,6 +866,6 @@
         <div id="adminZonaInvisivel" aria-hidden="true"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-        <script src="script.js?v=2026w"></script>
+        <script src="script.js?v=2026x"></script>
 </body>
 </html>
