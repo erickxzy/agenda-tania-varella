@@ -295,45 +295,48 @@ button:active {
 }
 
 .admin-menu-categorias {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 22px;
-  padding: 10px 12px;
-  background: rgba(255,255,255,0.03);
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border-radius: 16px;
+  border: 2px solid var(--border-color);
 }
 
 .btn-categoria {
   all: unset;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 5px 11px;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
+  padding: 18px 12px;
+  background: linear-gradient(135deg, var(--list-item-bg-start) 0%, var(--list-item-bg-end) 100%);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  gap: 5px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 8px;
   text-align: center;
+  min-height: 90px;
 }
 
 .btn-categoria:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(33, 150, 243, 0.2);
   border-color: var(--primary-color);
-  background: rgba(33,150,243,0.08);
-  color: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
 }
 
 .btn-categoria:hover .categoria-texto {
-  color: var(--primary-color);
+  color: #ffffff;
 }
 
 .btn-categoria.active {
-  background: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
   border-color: var(--primary-color);
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
 }
 
 .btn-categoria.active .categoria-texto {
@@ -341,24 +344,20 @@ button:active {
   font-weight: 700;
 }
 
-.btn-categoria.active .categoria-icone {
-  filter: brightness(10);
-}
-
 .categoria-icone {
-  font-size: 0.95rem;
-  transition: transform 0.2s ease;
+  font-size: 2rem;
+  transition: transform 0.3s ease;
 }
 
 .btn-categoria:hover .categoria-icone {
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 .categoria-texto {
-  font-size: 0.78rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-secondary);
-  transition: color 0.2s ease;
+  transition: color 0.3s ease;
   font-family: 'Inter', sans-serif;
 }
 
