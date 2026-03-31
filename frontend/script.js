@@ -1009,7 +1009,10 @@ async function mostrarPainelAluno(aluno){
   document.querySelectorAll('.btn-nav-aluno').forEach(btn => {
     btn.addEventListener('click', () => {
       const alvo = document.getElementById(btn.getAttribute('data-alvo'));
-      if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (alvo) {
+        const topo = alvo.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: topo, behavior: 'smooth' });
+      }
     });
   });
 }
@@ -1098,7 +1101,10 @@ function configurarNavegacaoAdmin(){
       secaoAtiva.classList.remove('hidden');
       secaoAtiva.classList.add('active');
 
-      setTimeout(() => secaoAtiva.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      setTimeout(() => {
+        const topo = secaoAtiva.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: topo, behavior: 'smooth' });
+      }, 50);
 
       switch(secaoNome){
         case 'turmas':    atualizarListaAlunos(); break;
