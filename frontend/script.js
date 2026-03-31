@@ -1005,6 +1005,13 @@ async function mostrarPainelAluno(aluno){
   }
 
   document.getElementById('btnEnviarDuvida').onclick = () => enviarDuvidaAluno(aluno);
+
+  document.querySelectorAll('.btn-nav-aluno').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const alvo = document.getElementById(btn.getAttribute('data-alvo'));
+      if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 }
 
 
@@ -1090,6 +1097,8 @@ function configurarNavegacaoAdmin(){
     if(secaoAtiva){
       secaoAtiva.classList.remove('hidden');
       secaoAtiva.classList.add('active');
+
+      setTimeout(() => secaoAtiva.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 
       switch(secaoNome){
         case 'turmas':    atualizarListaAlunos(); break;
