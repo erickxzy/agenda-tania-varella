@@ -1959,22 +1959,17 @@ async function atualizarEventosAdmin(){
 }
 
 function excluirEvento(id) {
-  console.log('[excluirEvento] chamado com id:', id);
   confirmarAcao('Excluir este evento?', async () => {
-    console.log('[excluirEvento] callback confirmado, id:', id);
     try {
       const res = await adminFetch(`/api/eventos/${id}`, { method: 'DELETE' });
-      console.log('[excluirEvento] resposta status:', res.status, 'ok:', res.ok);
       if (res.ok) {
         showToast("Evento excluído com sucesso!", "success");
         atualizarEventosAdmin();
       } else {
         const body = await res.json().catch(() => ({}));
-        console.log('[excluirEvento] erro body:', body);
         showToast(body.erro || "Erro ao excluir evento!", "error");
       }
     } catch (error) {
-      console.error('[excluirEvento] catch error:', error);
       showToast("Erro ao excluir evento!", "error");
     }
   });
