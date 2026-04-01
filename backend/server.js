@@ -8,7 +8,6 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const uploadsDir = path.join(__dirname, '../frontend/uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -104,59 +103,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 app.use(compression());
 
-app.use(createProxyMiddleware({
-        pathFilter: '/__mockup',
-        target: 'http://localhost:23636',
-        changeOrigin: true,
-        ws: true,
-}));
-
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, '../frontend'), {
         maxAge: '1h',
         etag: true
 }));
 app.get('/favicon.ico', (req, res) => res.redirect('/favicon.svg'));
-
-app.get('/ver-videos', (req, res) => {
-        res.send(`<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vídeos Instagram — Técnico 2C</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0a0a0f; color: white; font-family: sans-serif; min-height: 100vh; padding: 24px 16px; }
-    h1 { text-align: center; font-size: 1.1rem; color: #94a3b8; margin-bottom: 8px; letter-spacing: 0.05em; text-transform: uppercase; }
-    p  { text-align: center; font-size: 0.85rem; color: #475569; margin-bottom: 32px; }
-    .videos { display: flex; flex-direction: column; gap: 40px; align-items: center; }
-    .video-block { width: 100%; max-width: 480px; }
-    .video-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; text-align: center; }
-    .video-title { font-size: 1rem; font-weight: 600; color: #e2e8f0; margin-bottom: 12px; text-align: center; }
-    iframe { width: 100%; aspect-ratio: 1; border: none; border-radius: 16px; display: block; background: #111; }
-    .tip { margin-top: 48px; text-align: center; font-size: 0.8rem; color: #334155; padding-bottom: 24px; }
-  </style>
-</head>
-<body>
-  <h1>Técnico 2C</h1>
-  <p>Grave a tela enquanto o vídeo toca e poste no Instagram</p>
-  <div class="videos">
-    <div class="video-block">
-      <div class="video-label">Story / Reels</div>
-      <div class="video-title">Enquete — Sistema Digital</div>
-      <iframe src="/__mockup/preview/videos/VideoEnquete" allowfullscreen></iframe>
-    </div>
-    <div class="video-block">
-      <div class="video-label">Story / Reels</div>
-      <div class="video-title">Divulgação do Site</div>
-      <iframe src="/__mockup/preview/videos/VideoShowcase" allowfullscreen></iframe>
-    </div>
-  </div>
-  <p class="tip">Escola Tânia Varella Ferreira &nbsp;·&nbsp; Agenda Escolar Digital</p>
-</body>
-</html>`);
-});
 
 // Tabelas Supabase:
 // alunos         → Cadastro_Aluno
