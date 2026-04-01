@@ -8,6 +8,7 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const uploadsDir = path.join(__dirname, '../frontend/uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -102,6 +103,14 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 app.use(compression());
+
+app.use(createProxyMiddleware({
+        pathFilter: '/__mockup',
+        target: 'http://localhost:23636',
+        changeOrigin: true,
+        ws: true,
+}));
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, '../frontend'), {
         maxAge: '1h',
