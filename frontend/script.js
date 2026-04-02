@@ -1874,6 +1874,7 @@ async function atualizarEventosAdmin(){
     { codigo: "2A", nome: "2º Ano - Turma A" },
     { codigo: "2B", nome: "2º Ano - Turma B" },
     { codigo: "2C", nome: "2º Ano - Turma C" },
+    { codigo: "2D", nome: "2º Ano - Turma D" },
     { codigo: "3A", nome: "3º Ano - Turma A" },
     { codigo: "3B", nome: "3º Ano - Turma B" },
     { codigo: "3C", nome: "3º Ano - Turma C" }

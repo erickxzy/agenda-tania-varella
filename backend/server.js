@@ -161,7 +161,7 @@ app.post('/api/login-google/turma', async (req, res) => {
                 return res.status(400).json({ sucesso: false, erro: 'Dados incompletos.' });
         }
 
-        const turmasValidas = ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '3A', '3B', '3C'];
+        const turmasValidas = ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '2D', '3A', '3B', '3C'];
         if (!turmasValidas.includes(serie)) {
                 return res.status(400).json({ sucesso: false, erro: 'Turma inválida.' });
         }
@@ -805,7 +805,7 @@ app.put('/api/alunos/:id', requireAdminAuth, async (req, res) => {
         if (nome && nome.trim()) updates.nome = nome.trim();
         if (email && email.includes('@')) updates.email = email.trim().toLowerCase();
         if (serie) {
-                const turmasValidas = ['1A','1B','1C','1D','2A','2B','2C','3A','3B','3C'];
+                const turmasValidas = ['1A','1B','1C','1D','2A','2B','2C','2D','3A','3B','3C'];
                 if (!turmasValidas.includes(serie)) return res.status(400).json({ sucesso: false, erro: 'Turma inválida.' });
                 updates.serie = serie;
         }
@@ -889,7 +889,7 @@ app.post('/api/eventos', requireAdminAuth, async (req, res) => {
                 return res.status(400).json({ sucesso: false, erro: 'A descrição deve ter pelo menos 5 caracteres!' });
         }
 
-        const turmasValidas = ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '3A', '3B', '3C'];
+        const turmasValidas = ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '2D', '3A', '3B', '3C'];
         if (!turmasValidas.includes(serie)) {
                 return res.status(400).json({ sucesso: false, erro: 'Turma inválida! Use: ' + turmasValidas.join(', ') });
         }
@@ -913,7 +913,7 @@ app.put('/api/eventos/:id', requireAdminAuth, async (req, res) => {
         const updates = { descricao, data_evento: data_evento || null };
 
         if (serie) {
-                const turmasValidas = ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '3A', '3B', '3C'];
+                const turmasValidas = ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '2D', '3A', '3B', '3C'];
                 if (!turmasValidas.includes(serie)) {
                         return res.status(400).json({ sucesso: false, erro: 'Turma inválida!' });
                 }
@@ -1037,7 +1037,7 @@ app.delete('/api/avisos/:id', requireAdminAuth, async (req, res) => {
 
 // ─── TURMAS ───────────────────────────────────────────────────────────────────
 app.get('/api/turmas', (req, res) => {
-        res.json(['1A', '1B', '1C', '1D', '2A', '2B', '2C', '3A', '3B', '3C']);
+        res.json(['1A', '1B', '1C', '1D', '2A', '2B', '2C', '2D', '3A', '3B', '3C']);
 });
 
 // ─── PROFESSORES POR TURMA (Presenças) ───────────────────────────────────────
